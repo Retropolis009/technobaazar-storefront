@@ -1,9 +1,6 @@
-import { useState } from 'react'
 import { Search } from 'lucide-react'
-import type { Product } from '../data/storeData'
+import type { Product } from '../catalog'
 import ProductCard from './ProductCard'
-
-const pageSize = 8
 
 interface FeaturedProductsProps {
   favorites: string[]
@@ -22,8 +19,12 @@ function FeaturedProducts({
   onClearFilters,
   onToggleFavorite,
 }: FeaturedProductsProps) {
-  const [visibleCount, setVisibleCount] = useState(pageSize)
-  const visibleProducts = products.slice(0, visibleCount)
+  const groupedProducts = products.reduce<Record<string, Product[]>>((groups, product) => {
+    ;(groups[product.category] ??= []).push(product)
+    return groups
+  }, {})
+  const categoryOrder = ['Graphics Cards', 'Processors', 'Motherboards', 'Memory', 'Storage', 'Power Supplies', 'Cases & Cooling', 'Laptops', 'Monitors', 'Audio', 'Accessories']
+  const orderedGroups = Object.entries(groupedProducts).sort(([a], [b]) => categoryOrder.indexOf(a) - categoryOrder.indexOf(b))
 
   return (
     <section id="products" className="scroll-mt-40 border-y border-[#e2e6df] bg-white py-12 sm:py-16" aria-labelledby="products-title">
@@ -38,15 +39,19 @@ function FeaturedProducts({
         </div>
 
         {products.length > 0 ? (
-          <div className="mt-8 grid grid-cols-2 gap-x-3 gap-y-7 sm:gap-x-5 sm:gap-y-9 lg:grid-cols-3 xl:grid-cols-6">
-            {visibleProducts.map((product) => (
-              <ProductCard
-                key={product.name}
-                product={product}
-                isFavorite={favorites.includes(product.name)}
-                onAddToCart={onAddToCart}
-                onToggleFavorite={onToggleFavorite}
-              />
+          <div className="mt-8 space-y-12">
+            {orderedGroups.map(([category, categoryProducts]) => (
+              <section key={category} aria-label={category}>
+                <div className="mb-4 flex items-center gap-3 border-b border-[#e2e6df] pb-3">
+                  <h3 className="font-display text-lg font-bold">{category}</h3>
+                  <span className="text-xs text-[#68736c]">{categoryProducts.length} items</span>
+                </div>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-7 sm:gap-x-5 sm:gap-y-9 lg:grid-cols-3 xl:grid-cols-6">
+                  {categoryProducts.map((product) => (
+                    <ProductCard key={product.slug} product={product} isFavorite={favorites.includes(product.slug)} onAddToCart={onAddToCart} onToggleFavorite={onToggleFavorite} />
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
         ) : (
@@ -55,17 +60,6 @@ function FeaturedProducts({
             <p className="mt-3 font-semibold">No gear found for “{search}”</p>
             <button type="button" onClick={onClearFilters} className="mt-3 text-sm font-semibold text-[#315ee8] underline underline-offset-4">
               Clear filters
-            </button>
-          </div>
-        )}
-        {visibleCount < products.length && (
-          <div className="mt-9 flex justify-center">
-            <button
-              type="button"
-              onClick={() => setVisibleCount((count) => count + pageSize)}
-              className="inline-flex h-11 items-center gap-3 border border-[#cfd6ce] px-5 text-sm font-semibold transition hover:border-[#15201c] hover:bg-[#15201c] hover:text-white"
-            >
-              View more
             </button>
           </div>
         )}

@@ -1,7 +1,7 @@
 import { ArrowLeft, ArrowUpRight, Heart, ShoppingBag, Truck } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
-import { categorySlug, type Product } from '../data/storeData'
+import { categorySlug, type Product } from '../catalog'
 
 interface ProductPageProps {
   product: Product
@@ -41,7 +41,7 @@ function ProductPage({ product, relatedProducts, favorites, isFavorite, onAddToC
             </button>
             <button
               type="button"
-              onClick={() => onToggleFavorite(product.name)}
+              onClick={() => onToggleFavorite(product.slug)}
               aria-pressed={isFavorite}
               className="inline-flex h-12 items-center justify-center gap-2 border border-[#cfd6ce] px-4 text-sm font-semibold transition hover:border-[#e04f48] hover:text-[#e04f48]"
             >
@@ -72,7 +72,7 @@ function ProductPage({ product, relatedProducts, favorites, isFavorite, onAddToC
               <ProductCard
                 key={relatedProduct.slug}
                 product={relatedProduct}
-                isFavorite={favorites.includes(relatedProduct.name)}
+                isFavorite={favorites.includes(relatedProduct.slug)}
                 onAddToCart={onAddToCart}
                 onToggleFavorite={onToggleFavorite}
               />

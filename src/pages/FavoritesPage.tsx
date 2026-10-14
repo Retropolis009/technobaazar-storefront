@@ -1,7 +1,7 @@
 import { Heart } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
-import type { Product } from '../data/storeData'
+import type { Product } from '../catalog'
 
 interface FavoritesPageProps {
   products: Product[]

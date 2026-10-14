@@ -25,14 +25,11 @@ function HeroSection({ onSelectCategory }: HeroSectionProps) {
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <button
               type="button"
-              onClick={() => onSelectCategory('Components')}
+              onClick={() => onSelectCategory('All gear')}
               className="inline-flex h-12 items-center gap-4 bg-[#c7f464] px-5 text-sm font-bold text-[#142c24] transition hover:bg-white"
             >
-              Shop components <ArrowRight size={17} />
+              Explore All Gear <ArrowRight size={17} />
             </button>
-            <a href="#products" className="inline-flex h-12 items-center px-3 text-sm font-semibold text-white transition hover:text-[#c7f464]">
-              Explore all gear <ArrowUpRight size={16} className="ml-2" />
-            </a>
           </div>
           <div className="mt-9 flex items-center gap-3 text-xs text-white/75">
             <span className="flex -space-x-2" aria-hidden="true">

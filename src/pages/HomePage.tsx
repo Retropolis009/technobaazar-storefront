@@ -2,7 +2,7 @@ import DepartmentSection from '../components/DepartmentSection'
 import FeaturedProducts from '../components/FeaturedProducts'
 import HeroSection from '../components/HeroSection'
 import ShoppingBenefits from '../components/ShoppingBenefits'
-import { departments, type Product } from '../data/storeData'
+import { departments, type Product } from '../catalog'
 
 interface HomePageProps {
   favorites: string[]

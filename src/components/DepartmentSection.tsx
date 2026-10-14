@@ -1,5 +1,5 @@
 import { ArrowRight, ArrowUpRight } from 'lucide-react'
-import type { Department } from '../data/storeData'
+import type { Department } from '../catalog'
 
 interface DepartmentSectionProps {
   departments: Department[]

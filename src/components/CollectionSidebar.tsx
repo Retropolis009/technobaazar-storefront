@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { categories, categorySlug } from '../data/storeData'
+import { categories, categorySlug } from '../catalog'
 
 interface CollectionSidebarProps {
   idPrefix: string

@@ -10,7 +10,7 @@ import {
   X,
   Zap,
 } from 'lucide-react'
-import { categorySlug, type Department } from '../data/storeData'
+import { categorySlug, type Department } from '../catalog'
 import AnnouncementBar from './AnnouncementBar'
 
 interface SiteHeaderProps {
@@ -72,7 +72,7 @@ function SiteHeader({
               onChange={(event) => onSearchChange(event.target.value)}
               placeholder="Search laptops, components, gear..."
               aria-label="Search products"
-              className="h-full w-full bg-transparent px-3 text-sm outline-none placeholder:text-[#929a94]"
+              className="search-field h-full w-full bg-transparent px-3 text-sm outline-none placeholder:text-[#929a94]"
             />
             <kbd className="hidden whitespace-nowrap border border-[#e1e5df] px-1.5 py-1 text-[10px] text-[#89918b] lg:block">
               ENTER
@@ -102,7 +102,7 @@ function SiteHeader({
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder="Search the store"
             aria-label="Search products"
-            className="h-full w-full bg-transparent px-2.5 text-sm outline-none placeholder:text-[#929a94]"
+            className="search-field h-full w-full bg-transparent px-2.5 text-sm outline-none placeholder:text-[#929a94]"
           />
         </form>
 

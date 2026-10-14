@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import CollectionSidebar from '../components/CollectionSidebar'
 import ProductCard from '../components/ProductCard'
-import type { Product } from '../data/storeData'
+import type { Product } from '../catalog'
 
 interface CollectionPageProps {
   category: string
@@ -103,7 +103,7 @@ function CollectionPage({ category, products, favorites, onAddToCart, onToggleFa
               <ProductCard
                 key={product.slug}
                 product={product}
-                isFavorite={favorites.includes(product.name)}
+                isFavorite={favorites.includes(product.slug)}
                 onAddToCart={onAddToCart}
                 onToggleFavorite={onToggleFavorite}
               />
