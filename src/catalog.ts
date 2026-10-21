@@ -30,6 +30,7 @@ export interface Product {
   image: string
   imageAlt: string
   stockQuantity?: number
+  active?: boolean
 }
 
 export const departments: Department[] = [

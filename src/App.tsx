@@ -24,7 +24,7 @@ import {
 interface PageActions {
   products: Product[]
   favorites: string[]
-  onAddToCart: (product: Product) => void
+  onAddToCart: (product: Product, quantity?: number) => void
   onToggleFavorite: (productName: string) => void
 }
 
@@ -147,14 +147,15 @@ function App() {
     navigate(`/collections/${categorySlug(category)}`)
   }
 
-  function addToCart(product: Product) {
+  function addToCart(product: Product, quantity = 1) {
     const maximum = Math.min(99, product.stockQuantity ?? 99)
-    if ((cart[product.slug] ?? 0) >= maximum) {
+    const currentQuantity = cart[product.slug] ?? 0
+    if (currentQuantity >= maximum || currentQuantity + quantity > maximum) {
       setNotice(maximum === 0 ? `${product.name} is currently out of stock.` : `Only ${maximum} available for ${product.name}.`)
       return
     }
-    setCart((current) => ({ ...current, [product.slug]: Math.min(maximum, (current[product.slug] ?? 0) + 1) }))
-    setNotice(`${product.name} added to your bag.`)
+    setCart((current) => ({ ...current, [product.slug]: currentQuantity + quantity }))
+    setNotice(`${quantity} × ${product.name} added to your bag.`)
   }
 
   function removeFromCart(productSlug: string) {

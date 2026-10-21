@@ -16,6 +16,10 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 db = SQLAlchemy()
 migrate = Migrate()
+PRODUCT_CATEGORIES = {
+    'Graphics Cards', 'Processors', 'Motherboards', 'Memory', 'Storage',
+    'Power Supplies', 'Cases & Cooling', 'Laptops', 'Monitors', 'Audio', 'Accessories',
+}
 
 _rate_lock = threading.Lock()
 _rate_buckets = {}
@@ -426,6 +430,8 @@ def create_app():
         if any(key not in data for key in required):
             return jsonify({'error': 'slug, name, category, brand, and priceValue are required'}), 400
         strings = {key: valid_text(data, key, maximum, required=True) for key, maximum in {'slug': 180, 'name': 240, 'category': 100, 'brand': 120}.items()}
+        if strings['category'] not in PRODUCT_CATEGORIES:
+            return jsonify({'error': 'Choose one of the existing product categories.'}), 400
         price = positive_int(data.get('priceValue'))
         stock = positive_int(data.get('stockQuantity', 0), allow_zero=True)
         specs = data.get('specifications', [])
@@ -482,6 +488,10 @@ def create_app():
                     parsed_image = urlparse(value) if isinstance(value, str) else None
                     if not isinstance(value, str) or len(value) > 2000 or (value and (parsed_image.scheme not in {'https', 'http'} or not parsed_image.netloc)):
                         return jsonify({'error': 'image must be an HTTP or HTTPS URL.'}), 400
+                elif incoming == 'category':
+                    value = valid_text({incoming: value}, incoming, 100, required=True)
+                    if value is False or value not in PRODUCT_CATEGORIES:
+                        return jsonify({'error': 'Choose one of the existing product categories.'}), 400
                 else:
                     maximum = {'name': 240, 'category': 100, 'brand': 120, 'detail': 300, 'description': 5000, 'badge': 100, 'imageAlt': 300}[incoming]
                     value = valid_text({incoming: value}, incoming, maximum, required=incoming in {'name', 'category', 'brand'})

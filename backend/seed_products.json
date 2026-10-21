@@ -5,12 +5,12 @@
     "category": "Graphics Cards",
     "brand": "Zotac",
     "detail": "12GB GDDR7 · 2.5-slot design",
-    "description": "A powerful graphics upgrade built for high-refresh gaming, creative workloads, and detailed worlds without compromise.",
+    "description": "The GeForce RTX 5070 Twin Edge OC pairs 12GB of GDDR7 memory with a dual-fan cooler in a compact 2.5-slot design. PCI Express 5.0 connectivity and support for ray tracing and DLSS make it a graphics card for modern gaming and creative builds.",
     "specifications": [
-      "12GB GDDR7 memory",
-      "PCI Express 5.0",
-      "Dual-fan cooling",
-      "Ray tracing and DLSS support"
+      "Memory: 12GB GDDR7",
+      "Interface: PCI Express 5.0",
+      "Cooling: Dual-fan design",
+      "Graphics features: Ray tracing and DLSS support"
     ],
     "price": "Rs. 289,000",
     "priceValue": 289000,
@@ -24,12 +24,12 @@
     "category": "Laptops",
     "brand": "AeroBook",
     "detail": "Core Ultra 7 · 16GB · 1TB SSD",
-    "description": "A portable creator laptop with a crisp display, responsive performance, and room for your everyday projects.",
+    "description": "The AeroBook 14 Creator Edition combines an Intel Core Ultra 7 processor with 16GB of memory and a 1TB NVMe SSD. Its 14-inch high-resolution display and portable format suit creative work, study, and everyday computing.",
     "specifications": [
-      "Intel Core Ultra 7",
-      "16GB memory",
-      "1TB NVMe SSD",
-      "14-inch high-resolution display"
+      "Processor: Intel Core Ultra 7",
+      "Memory: 16GB",
+      "Storage: 1TB NVMe SSD",
+      "Display: 14-inch high-resolution panel"
     ],
     "price": "Rs. 324,999",
     "priceValue": 324999,
@@ -43,12 +43,12 @@
     "category": "Audio",
     "brand": "Studio One",
     "detail": "Active noise canceling · 40-hour battery",
-    "description": "Comfortable wireless listening with focused noise cancellation and dependable battery life for long days.",
+    "description": "Studio One wireless headphones combine active noise cancellation with up to 40 hours of battery life. The foldable over-ear design and Bluetooth connection make them easy to carry between work, travel, and home listening.",
     "specifications": [
-      "Active noise cancellation",
-      "Up to 40-hour battery",
-      "Bluetooth wireless",
-      "Foldable over-ear design"
+      "Noise control: Active noise cancellation",
+      "Battery: Up to 40 hours",
+      "Connection: Bluetooth wireless",
+      "Design: Foldable over-ear"
     ],
     "price": "Rs. 34,500",
     "priceValue": 34500,
@@ -62,12 +62,12 @@
     "category": "Monitors",
     "brand": "Arc",
     "detail": "1440p IPS · 180Hz · 1ms",
-    "description": "Fast, fluid 1440p gaming on a color-rich IPS panel, sized to make your desk feel like a command center.",
+    "description": "The Arc 27 pairs a 27-inch QHD IPS panel with a 180Hz refresh rate and a 1ms response time. Adaptive sync support helps keep motion smooth, while the 1440p resolution gives games and desktop work more room for detail.",
     "specifications": [
-      "27-inch QHD IPS panel",
-      "180Hz refresh rate",
-      "1ms response time",
-      "Adaptive sync support"
+      "Panel: 27-inch QHD IPS",
+      "Refresh rate: 180Hz",
+      "Response time: 1ms",
+      "Sync: Adaptive sync support"
     ],
     "price": "Rs. 119,900",
     "priceValue": 119900,
@@ -81,12 +81,12 @@
     "category": "Accessories",
     "brand": "Keychron",
     "detail": "75% layout · Hot-swappable · Wireless",
-    "description": "A compact mechanical keyboard with a tactile feel, flexible connectivity, and a layout that leaves space for your mouse.",
+    "description": "The Keychron K2 Pro uses a compact 75% layout to keep the essential keys while freeing desk space. Hot-swappable switches let you customize the typing feel, and Bluetooth or USB-C connectivity supports flexible setups across Mac and Windows.",
     "specifications": [
-      "75% compact layout",
-      "Hot-swappable switches",
-      "Bluetooth and USB-C",
-      "Mac and Windows keycaps included"
+      "Layout: Compact 75%",
+      "Switches: Hot-swappable",
+      "Connection: Bluetooth and USB-C",
+      "Compatibility: Mac and Windows keycaps included"
     ],
     "price": "Rs. 27,500",
     "priceValue": 27500,
@@ -100,12 +100,12 @@
     "category": "Cases & Cooling",
     "brand": "Vortex",
     "detail": "Mesh front · 4 ARGB fans included",
-    "description": "A clean, airflow-focused chassis with room to grow and lighting ready for a build that feels like yours.",
+    "description": "The Vortex Airflow is a mid-tower case with ATX motherboard support, a mesh front panel, and four included ARGB fans. A tempered-glass side panel shows off the build, while the airflow-focused front helps move air through the system.",
     "specifications": [
-      "Mid-tower ATX support",
-      "Mesh front panel",
-      "Four ARGB fans included",
-      "Tempered-glass side panel"
+      "Form factor: Mid-tower with ATX support",
+      "Front panel: Mesh",
+      "Included cooling: Four ARGB fans",
+      "Side panel: Tempered glass"
     ],
     "price": "Rs. 39,990",
     "priceValue": 39990,
@@ -119,12 +119,12 @@
     "category": "Accessories",
     "brand": "Pulse",
     "detail": "26K sensor · 70-hour battery · 59g",
-    "description": "A lightweight wireless mouse tuned for quick, precise movement through long work sessions.",
+    "description": "The Pulse wireless mouse combines a 59g lightweight shell with a 26,000 DPI optical sensor for responsive pointer control. Its battery lasts up to 70 hours, and USB-C charging keeps it ready for work or play.",
     "specifications": [
-      "26,000 DPI optical sensor",
-      "Up to 70-hour battery",
-      "59g lightweight shell",
-      "USB-C charging"
+      "Sensor: 26,000 DPI optical",
+      "Battery: Up to 70 hours",
+      "Weight: 59g",
+      "Charging: USB-C"
     ],
     "price": "Rs. 18,900",
     "priceValue": 18900,
@@ -138,12 +138,12 @@
     "category": "Power Supplies",
     "brand": "Corsair",
     "detail": "80 PLUS Gold · Fully modular · ATX 3.1",
-    "description": "A quiet, efficient power supply with a fully modular cable set for clean and dependable builds.",
+    "description": "The Corsair RM850e supplies 850W of continuous power and carries 80 PLUS Gold certification. Its fully modular cables help simplify cable routing, and ATX 3.1 plus PCIe 5.1 readiness support current PC build requirements.",
     "specifications": [
-      "850W continuous power",
-      "80 PLUS Gold certified",
-      "Fully modular cables",
-      "ATX 3.1 and PCIe 5.1 ready"
+      "Output: 850W continuous power",
+      "Efficiency: 80 PLUS Gold certified",
+      "Cabling: Fully modular",
+      "Standards: ATX 3.1 and PCIe 5.1 ready"
     ],
     "price": "Rs. 49,900",
     "priceValue": 49900,
@@ -157,12 +157,12 @@
     "category": "Processors",
     "brand": "AMD",
     "detail": "8 cores · 16 threads · AM5 socket",
-    "description": "A high-performance desktop processor designed for demanding games and responsive multitasking.",
+    "description": "The Ryzen 7 9800X3D is an 8-core, 16-thread desktop processor for the AM5 platform. It boosts up to 5.2GHz and uses AMD 3D V-Cache technology, making it a strong choice for gaming-focused systems and demanding desktop workloads.",
     "specifications": [
-      "8 cores and 16 threads",
-      "Up to 5.2GHz boost",
-      "AM5 socket",
-      "3D V-Cache technology"
+      "Cores: 8 cores and 16 threads",
+      "Maximum boost: Up to 5.2GHz",
+      "Socket: AM5",
+      "Cache technology: 3D V-Cache"
     ],
     "price": "Rs. 164,900",
     "priceValue": 164900,
@@ -176,12 +176,12 @@
     "category": "Audio",
     "brand": "Soundstage",
     "detail": "2.0 stereo · USB-C · Bluetooth",
-    "description": "A tidy desktop speaker pair that brings full, clear sound to music, games, and video calls.",
+    "description": "Soundstage is a compact 2.0 stereo speaker pair for a desktop setup. USB-C and Bluetooth inputs provide wired and wireless connection options, with front-facing volume control for quick adjustments.",
     "specifications": [
-      "2.0 stereo sound",
-      "USB-C and Bluetooth input",
-      "Front-facing volume control",
-      "Compact desktop footprint"
+      "Audio: 2.0 stereo",
+      "Inputs: USB-C and Bluetooth",
+      "Controls: Front-facing volume control",
+      "Design: Compact desktop footprint"
     ],
     "price": "Rs. 22,500",
     "priceValue": 22500,
@@ -195,12 +195,12 @@
     "category": "Motherboards",
     "brand": "MSI",
     "detail": "AMD AM5 · DDR5 · ATX",
-    "description": "A feature-rich AM5 motherboard with modern connectivity and room for a well-balanced desktop build.",
+    "description": "The MSI MAG B650 Tomahawk is an ATX motherboard for AMD AM5 processors, built on the B650 chipset. It supports DDR5 memory, PCIe 4.0, and Wi-Fi 6E for a current-generation desktop build.",
     "specifications": [
-      "AMD B650 chipset",
-      "AM5 socket",
-      "DDR5 memory support",
-      "PCIe 4.0 and Wi-Fi 6E"
+      "Chipset: AMD B650",
+      "Processor socket: AM5",
+      "Memory: DDR5 support",
+      "Connectivity: PCIe 4.0 and Wi-Fi 6E"
     ],
     "price": "Rs. 82,000",
     "priceValue": 82000,
@@ -214,12 +214,12 @@
     "category": "Memory",
     "brand": "Kingston",
     "detail": "2 × 16GB · 6000MT/s · DDR5",
-    "description": "A responsive dual-channel memory kit designed for current desktop platforms and demanding multitasking.",
+    "description": "This Kingston FURY Beast kit provides 32GB of DDR5 memory across two 16GB modules. It is rated for 6000MT/s and includes Intel XMP 3.0 and AMD EXPO profiles for supported desktop platforms.",
     "specifications": [
-      "32GB total capacity",
-      "2 × 16GB modules",
-      "6000MT/s speed",
-      "Intel XMP 3.0 and AMD EXPO"
+      "Capacity: 32GB total",
+      "Kit: 2 × 16GB modules",
+      "Speed: 6000MT/s",
+      "Profiles: Intel XMP 3.0 and AMD EXPO"
     ],
     "price": "Rs. 54,000",
     "priceValue": 54000,
@@ -233,12 +233,12 @@
     "category": "Storage",
     "brand": "Kingston",
     "detail": "PCIe 4.0 · M.2 2280 · 6000MB/s",
-    "description": "A compact PCIe 4.0 drive that gives a new build or laptop a quick, spacious storage upgrade.",
+    "description": "The Kingston NV3 provides 1TB of NVMe storage in an M.2 2280 form factor. Its PCIe 4.0 interface and rated read speeds up to 6000MB/s make it a compact storage option for compatible laptops and desktop systems.",
     "specifications": [
-      "1TB capacity",
-      "M.2 2280 form factor",
-      "PCIe 4.0 NVMe interface",
-      "Up to 6000MB/s read"
+      "Capacity: 1TB",
+      "Form factor: M.2 2280",
+      "Interface: PCIe 4.0 NVMe",
+      "Sequential read: Up to 6000MB/s"
     ],
     "price": "Rs. 28,500",
     "priceValue": 28500,
