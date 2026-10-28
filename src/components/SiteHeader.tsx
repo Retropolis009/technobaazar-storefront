@@ -22,6 +22,7 @@ interface SiteHeaderProps {
   cartCount: number
   menuOpen: boolean
   onToggleMenu: () => void
+  announcement?: string
 }
 
 function SiteHeader({
@@ -33,6 +34,7 @@ function SiteHeader({
   cartCount,
   menuOpen,
   onToggleMenu,
+  announcement,
 }: SiteHeaderProps) {
   return (
     <>
@@ -121,7 +123,7 @@ function SiteHeader({
           </Link>
         </nav>
       </header>
-      <AnnouncementBar />
+      <AnnouncementBar message={announcement} />
     </>
   )
 }

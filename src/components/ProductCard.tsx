@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Heart, ShoppingBag } from 'lucide-react'
-import type { Product } from '../catalog'
+import { PLACEHOLDER_IMAGE, type Product } from '../catalog'
 
 interface ProductCardProps {
   product: Product
@@ -10,21 +10,29 @@ interface ProductCardProps {
 }
 
 function ProductCard({ product, isFavorite, onAddToCart, onToggleFavorite }: ProductCardProps) {
+  const outOfStock = (product.trackStock ?? true) && (product.stockQuantity ?? 0) <= 0
   return (
     <article className="product-card group">
       <div className="product-image-wrap relative aspect-[0.94] overflow-hidden bg-[#f2f4f0]">
         <Link to={`/products/${product.slug}`} aria-label={`View ${product.name}`} className="block size-full">
           <img
-            src={product.image}
-            alt={product.imageAlt}
+            src={product.image || PLACEHOLDER_IMAGE}
+            alt={product.imageAlt || product.name}
             loading="lazy"
+            onError={(event) => { event.currentTarget.src = PLACEHOLDER_IMAGE }}
             className="size-full object-cover transition duration-500 group-hover:scale-[1.04]"
           />
         </Link>
+        {product.badge && (
+          <span className="absolute left-2.5 top-2.5 bg-[#c7f464] px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-[#142c24]">
+            {product.badge}
+          </span>
+        )}
         <button
           type="button"
           onClick={() => onAddToCart(product)}
-          className="absolute bottom-2.5 right-2.5 grid size-9 place-items-center bg-[#c7f464] text-[#142c24] transition hover:bg-[#142c24] hover:text-white sm:bottom-3 sm:right-3"
+          disabled={outOfStock}
+          className="absolute bottom-2.5 right-2.5 grid size-9 place-items-center bg-[#c7f464] text-[#142c24] transition hover:bg-[#142c24] hover:text-white disabled:cursor-not-allowed disabled:opacity-45 sm:bottom-3 sm:right-3"
           aria-label={`Add ${product.name} to bag`}
         >
           <ShoppingBag size={16} />
@@ -45,7 +53,13 @@ function ProductCard({ product, isFavorite, onAddToCart, onToggleFavorite }: Pro
           <Link to={`/products/${product.slug}`} className="hover:text-[#315ee8]">{product.name}</Link>
         </h3>
         <p className="mt-1 line-clamp-1 text-[11px] text-[#78817a]">{product.detail}</p>
-        <p className="mt-3 font-display text-sm font-bold tracking-[-0.02em] sm:text-base">{product.price}</p>
+        <p className="mt-3 flex flex-wrap items-baseline gap-x-2 font-display text-sm font-bold tracking-[-0.02em] sm:text-base">
+          {product.price}
+          {product.compareAtPrice != null && product.compareAtPrice > product.priceValue && (
+            <s className="font-sans text-xs font-semibold text-[#9aa29b]">{product.compareAt}</s>
+          )}
+        </p>
+        {outOfStock && <p className="mt-1 text-[11px] font-semibold text-[#a33131]">Out of stock</p>}
       </div>
     </article>
   )
