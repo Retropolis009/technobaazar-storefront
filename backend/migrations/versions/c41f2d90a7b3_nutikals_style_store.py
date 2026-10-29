@@ -115,14 +115,17 @@ def upgrade():
 
     op.create_table(
         'order_stock_movement',
+        sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('order_id', sa.Integer(), nullable=False),
         sa.Column('product_id', sa.Integer(), nullable=True),
         sa.Column('quantity', sa.Integer(), nullable=False),
         sa.Column('restored_at', sa.DateTime(timezone=True), nullable=True),
         sa.ForeignKeyConstraint(['order_id'], ['order.id'], ondelete='CASCADE'),
         sa.ForeignKeyConstraint(['product_id'], ['product.id'], ondelete='SET NULL'),
-        sa.PrimaryKeyConstraint('order_id', 'product_id'),
+        sa.PrimaryKeyConstraint('id'),
+        sa.UniqueConstraint('order_id', 'product_id'),
     )
+    op.create_index('ix_order_stock_movement_order_id', 'order_stock_movement', ['order_id'], unique=False)
 
     op.create_table(
         'site_content',
@@ -149,6 +152,7 @@ def downgrade():
     op.drop_index('ix_site_content_revision_status', table_name='site_content_revision')
     op.drop_table('site_content_revision')
     op.drop_table('site_content')
+    op.drop_index('ix_order_stock_movement_order_id', table_name='order_stock_movement')
     op.drop_table('order_stock_movement')
     with op.batch_alter_table('order', schema=None) as batch_op:
         batch_op.drop_index('ix_order_idempotency_key')

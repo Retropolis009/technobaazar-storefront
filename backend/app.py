@@ -301,10 +301,12 @@ class OrderItem(db.Model):
 
 
 class OrderStockMovement(db.Model):
-    order_id = db.Column(db.Integer, db.ForeignKey('order.id', ondelete='CASCADE'), primary_key=True)
-    product_id = db.Column(db.Integer, db.ForeignKey('product.id', ondelete='SET NULL'), primary_key=True, nullable=True)
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('order.id', ondelete='CASCADE'), nullable=False, index=True)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id', ondelete='SET NULL'), nullable=True)
     quantity = db.Column(db.Integer, nullable=False)
     restored_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    __table_args__ = (db.UniqueConstraint('order_id', 'product_id'),)
 
 
 class SiteContent(db.Model):
@@ -340,10 +342,35 @@ def is_local_or_http_url(value):
     return parsed.scheme in {'http', 'https'} and bool(parsed.netloc)
 
 
+def parse_allowed_origins(raw):
+    """FRONTEND_ORIGIN may be one origin or a comma-separated list."""
+    origins = [part.strip().rstrip('/') for part in (raw or '').split(',') if part.strip()]
+    return origins or ['http://localhost:5173']
+
+
+def origin_allowed(origin, allowed_origins, production):
+    """Exact-match the configured origins. Outside production, also trust
+    local hosts and https sandbox previews so the app can be tested from
+    hosted preview URLs without weakening production."""
+    normalized = (origin or '').rstrip('/')
+    if normalized in allowed_origins:
+        return True
+    if production or not normalized:
+        return False
+    try:
+        parsed = urlparse(normalized)
+    except ValueError:
+        return False
+    host = (parsed.hostname or '').lower()
+    if parsed.scheme in {'http', 'https'} and host in {'localhost', '127.0.0.1'}:
+        return True
+    return parsed.scheme == 'https' and host.endswith('.e2b.app')
+
+
 def create_app():
     app = Flask(__name__)
     production = os.environ.get('APP_ENV', '').lower() == 'production'
-    frontend_origin = os.environ.get('FRONTEND_ORIGIN', 'http://localhost:5173').rstrip('/')
+    allowed_origins = parse_allowed_origins(os.environ.get('FRONTEND_ORIGIN', 'http://localhost:5173'))
     secret_key = os.environ.get('FLASK_SECRET_KEY')
     trusted_proxy_hops = int(os.environ.get('TRUSTED_PROXY_HOPS', '0'))
     if not 0 <= trusted_proxy_hops <= 5:
@@ -359,20 +386,19 @@ def create_app():
         MAX_CONTENT_LENGTH=UPLOAD_MAX_BYTES + 1024 * 1024,
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE='Lax',
-        SESSION_COOKIE_SECURE=production or frontend_origin.startswith('https://'),
+        SESSION_COOKIE_SECURE=production or any(origin.startswith('https://') for origin in allowed_origins),
         UPLOAD_DIR=upload_dir,
     )
     db.init_app(app)
     migrate.init_app(app, db)
     if trusted_proxy_hops:
         app.wsgi_app = ProxyFix(app.wsgi_app, x_for=trusted_proxy_hops, x_proto=trusted_proxy_hops)
-    CORS(app, origins=[frontend_origin], supports_credentials=True)
+    CORS(app, origins=allowed_origins, supports_credentials=True)
 
     @app.before_request
     def enforce_origin_for_mutations():
         if request.method in {'POST', 'PUT', 'PATCH', 'DELETE'}:
-            origin = request.headers.get('Origin')
-            if not origin or origin.rstrip('/') != frontend_origin:
+            if not origin_allowed(request.headers.get('Origin'), allowed_origins, production):
                 return jsonify({'error': 'Request origin is not allowed.'}), 403
 
     @app.errorhandler(413)
@@ -1721,6 +1747,22 @@ def create_app():
         with app.app_context():
             db.create_all()
             ensure_store_defaults()
+
+    # Single-service hosting (Nutikals-style): when the frontend has been
+    # built (`npm run build` in frontend/), serve it directly from Flask with
+    # an SPA fallback. API routes are registered above and take precedence.
+    frontend_dist = Path(__file__).resolve().parent.parent / 'frontend' / 'dist'
+    if frontend_dist.is_dir():
+        @app.get('/', defaults={'path': ''})
+        @app.get('/<path:path>')
+        def serve_frontend(path):
+            if path == 'api' or path.startswith('api/'):
+                return jsonify({'error': 'Not found.'}), 404
+            target = frontend_dist / path
+            if path and target.is_file():
+                max_age = 31536000 if path.startswith('assets/') else 3600
+                return send_from_directory(frontend_dist, path, max_age=max_age)
+            return send_from_directory(frontend_dist, 'index.html')
 
     return app
 
