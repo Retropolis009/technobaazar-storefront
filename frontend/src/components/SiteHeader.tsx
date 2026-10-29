@@ -2,6 +2,7 @@ import type { FormEventHandler } from 'react'
 import { Link } from 'react-router-dom'
 import {
   ArrowUpRight,
+  ChevronDown,
   Heart,
   Menu,
   Search,
@@ -116,10 +117,38 @@ function SiteHeader({
           aria-label="Shop departments"
         >
           <Link to="/collections/all-gear" className="category-link">All gear</Link>
-          {departments.map(({ name }) => (
-            <Link to={`/collections/${categorySlug(name)}`} key={name} className="category-link">
-              {name}
-            </Link>
+          {departments.map(({ name, subcategories = [] }) => (
+            <div key={name} className="group relative">
+              <Link
+                to={`/collections/${categorySlug(name)}`}
+                className="category-link inline-flex items-center gap-1"
+                aria-haspopup={subcategories.length ? 'true' : undefined}
+              >
+                {name}{subcategories.length > 0 && <ChevronDown size={12} aria-hidden="true" />}
+              </Link>
+              {subcategories.length > 0 && (
+                <div className="absolute left-0 top-full z-50 hidden min-w-52 border border-[#dfe4dc] bg-white py-1 shadow-lg group-hover:block group-focus-within:block">
+                  {subcategories.map((subcategory) => (
+                    <Link
+                      key={subcategory}
+                      to={`/collections/${categorySlug(subcategory)}`}
+                      className="block whitespace-nowrap px-4 py-2.5 text-xs font-medium text-[#5c675f] transition hover:bg-[#f5f6f2] hover:text-[#315ee8]"
+                    >
+                      {subcategory}
+                    </Link>
+                  ))}
+                </div>
+              )}
+              {subcategories.length > 0 && (
+                <div className="pl-3 lg:hidden">
+                  {subcategories.map((subcategory) => (
+                    <Link key={subcategory} to={`/collections/${categorySlug(subcategory)}`} className="category-link block text-xs text-[#68736c]">
+                      {subcategory}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           ))}
           <Link to="/about" className="category-link category-link-wide">
             {content.header_about_text} <ArrowUpRight size={13} />

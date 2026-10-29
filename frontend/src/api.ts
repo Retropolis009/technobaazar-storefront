@@ -63,6 +63,8 @@ export interface Category {
   slug: string
   sortOrder: number
   visible: boolean
+  parentId: number | null
+  parentName: string | null
 }
 
 export interface CategoryField {

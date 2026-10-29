@@ -12,7 +12,6 @@ type Draft = {
   detail: string; description: string; image: string; imageAlt: string; stockQuantity: string
   active: boolean; trackStock: boolean; specifications: Array<{ label: string; value: string }>
 }
-const productCategories = ['Graphics Cards', 'Used Graphics Cards', 'Processors', 'Motherboards', 'Memory', 'Storage', 'Power Supplies', 'Cases & Cooling', 'Laptops', 'Used Laptops', 'Monitors', 'Audio', 'Accessories']
 const emptyDraft: Draft = {
   slug: '', name: '', category: 'Graphics Cards', brand: '', price: '', compareAtPrice: '', badge: '', detail: '',
   description: '', image: '', imageAlt: '', stockQuantity: '0', active: true, trackStock: true, specifications: [{ label: '', value: '' }],
@@ -46,6 +45,7 @@ function AdminPage({ products, onProductsChange }: Props) {
   const [draft, setDraft] = useState<Draft>(emptyDraft)
   const [saving, setSaving] = useState(false)
   const [categoryFields, setCategoryFields] = useState<CategoryField[]>([])
+  const [availableCategories, setAvailableCategories] = useState<Category[]>([])
   const categories = ['All types', ...Array.from(new Set(products.map(product => product.category))).sort()]
   const matchingProducts = useMemo(() => products.filter(product =>
     (categoryFilter === 'All types' || product.category === categoryFilter) &&
@@ -60,6 +60,7 @@ function AdminPage({ products, onProductsChange }: Props) {
 
   useEffect(() => {
     if (!authenticated) return
+    adminFetch<Category[]>('/api/admin/categories').then(setAvailableCategories).catch(() => undefined)
     async function loadServerCatalog() {
       try {
         const catalog = await adminFetch<{ initialized: boolean; products: Product[] }>('/api/catalog')
@@ -114,7 +115,7 @@ function AdminPage({ products, onProductsChange }: Props) {
     const specifications = draft.specifications
       .filter(specification => specification.label.trim() || specification.value.trim())
       .map(specification => specification.label.trim() ? `${specification.label.trim()}: ${specification.value.trim()}` : specification.value.trim())
-    if (!draft.name.trim() || !productCategories.includes(draft.category) || !draft.brand.trim() || !Number.isInteger(priceValue) || priceValue < 1 || !Number.isInteger(stockQuantity) || stockQuantity < 0) {
+    if (!draft.name.trim() || !availableCategories.some(category => category.name === draft.category) || !draft.brand.trim() || !Number.isInteger(priceValue) || priceValue < 1 || !Number.isInteger(stockQuantity) || stockQuantity < 0) {
       setError('Choose an existing category and enter a product name, brand, whole-number price, and valid stock quantity.')
       return
     }
@@ -201,7 +202,7 @@ function AdminPage({ products, onProductsChange }: Props) {
       />}
       {section === 'orders' && <OrdersSection onError={setError} />}
       {section === 'content' && <ContentSection onError={setError} />}
-      {section === 'settings' && <SettingsSection onError={setError} />}
+      {section === 'settings' && <SettingsSection onError={setError} onCategoriesChange={setAvailableCategories} />}
     </div></div>
     {formOpen && <div className="fixed inset-0 z-50 overflow-y-auto bg-[#15201c]/60 p-2 sm:p-5">
       <div className="mx-auto my-2 max-w-[1440px] overflow-hidden bg-[#f5f6f2] shadow-2xl sm:my-5">
@@ -217,7 +218,7 @@ function AdminPage({ products, onProductsChange }: Props) {
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 <Field label="Product name" required><input required maxLength={240} value={draft.name} onChange={event => setDraft({ ...draft, name: event.target.value, slug: editing ? draft.slug : slugify(event.target.value) })} className={inputClass}/></Field>
                 <Field label="Brand" required><input required maxLength={120} value={draft.brand} onChange={event => setDraft({ ...draft, brand: event.target.value })} className={inputClass}/></Field>
-                <Field label="Category" required><select required value={draft.category} onChange={event => setDraft({ ...draft, category: event.target.value })} className={`${inputClass} bg-white`}>{productCategories.map(category => <option key={category} value={category}>{category}</option>)}</select></Field>
+                <Field label="Category" required><select required value={draft.category} onChange={event => setDraft({ ...draft, category: event.target.value })} className={`${inputClass} bg-white`}>{availableCategories.map(category => <option key={category.id} value={category.name}>{category.parentName ? `${category.parentName} / ${category.name}` : category.name}</option>)}</select></Field>
                 <Field label="Product URL slug" required hint={editing ? 'The published URL stays the same when editing this listing.' : 'Used in the product page URL.'}><input required readOnly={Boolean(editing)} maxLength={180} pattern="[A-Za-z0-9-]+" value={draft.slug} onChange={event => setDraft({ ...draft, slug: event.target.value })} className={`${inputClass} read-only:bg-[#f5f6f2] read-only:text-[#68736c]`}/></Field>
                 <Field label="Short detail line" hint="Displayed directly below the product name." ><input maxLength={300} value={draft.detail} onChange={event => setDraft({ ...draft, detail: event.target.value })} placeholder="Example: 16GB GDDR6 · Triple-fan cooling" className={inputClass}/></Field>
                 <Field label="Badge" hint="Optional label such as New arrival or Bestseller."><input maxLength={100} value={draft.badge} onChange={event => setDraft({ ...draft, badge: event.target.value })} className={inputClass}/></Field>
@@ -772,7 +773,7 @@ function LandingPreview({ values, benefits }: { values: Record<string, string>; 
 }
 
 // ---------------------------------------------------------------- settings ---
-function SettingsSection({ onError }: { onError: (message: string) => void }) {
+function SettingsSection({ onError, onCategoriesChange }: { onError: (message: string) => void; onCategoriesChange: (categories: Category[]) => void }) {
   const [settings, setSettings] = useState<AdminSettings | null>(null)
   const [deliveryFee, setDeliveryFee] = useState('')
   const [threshold, setThreshold] = useState('')
@@ -781,6 +782,8 @@ function SettingsSection({ onError }: { onError: (message: string) => void }) {
   const [couponDraft, setCouponDraft] = useState({ code: '', discountType: 'percent', value: '', minimumSubtotal: '', maxUses: '', active: true })
   const [editingCoupon, setEditingCoupon] = useState<AdminCoupon | null>(null)
   const [categories, setCategories] = useState<Category[]>([])
+  const [categoryName, setCategoryName] = useState('')
+  const [categoryParentId, setCategoryParentId] = useState('')
 
   async function load() {
     try {
@@ -853,9 +856,29 @@ function SettingsSection({ onError }: { onError: (message: string) => void }) {
   async function saveCategory(category: Category, patch: { visible?: boolean; sortOrder?: number }) {
     try {
       const saved = await adminFetch<Category>(`/api/admin/categories/${category.id}`, { method: 'PUT', body: JSON.stringify(patch) })
-      setCategories(categories.map(item => item.id === saved.id ? saved : item))
+      const updated = categories.map(item => item.id === saved.id ? saved : item)
+      setCategories(updated)
+      onCategoriesChange(updated)
     } catch (cause) {
       onError(cause instanceof Error ? cause.message : 'Category was not updated.')
+    }
+  }
+
+  async function createCategory(event: FormEvent) {
+    event.preventDefault()
+    try {
+      const saved = await adminFetch<Category>('/api/admin/categories', {
+        method: 'POST',
+        body: JSON.stringify({ name: categoryName, parentId: categoryParentId ? Number(categoryParentId) : null }),
+      })
+      const updated = [...categories, saved].sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
+      setCategories(updated)
+      onCategoriesChange(updated)
+      setCategoryName('')
+      setCategoryParentId('')
+      onError('')
+    } catch (cause) {
+      onError(cause instanceof Error ? cause.message : 'Category was not created.')
     }
   }
 
@@ -898,17 +921,22 @@ function SettingsSection({ onError }: { onError: (message: string) => void }) {
 
     <section className="border border-[#dfe4dc] bg-white p-5 sm:p-6">
       <h2 className="font-display text-lg font-bold">Categories & custom fields</h2>
-      <p className="mt-1 text-xs text-[#68736c]">Hidden categories disappear from the homepage departments. Custom fields become one-click specification rows in the product editor.</p>
-      <ul className="mt-4 grid items-start gap-2 xl:grid-cols-2">{categories.map(category => <CategoryRow key={category.id} category={category} onToggleVisible={(visible) => void saveCategory(category, { visible })} onError={onError} />)}</ul>
+      <p className="mt-1 text-xs text-[#68736c]">Add subcategories under a main category. Visibility controls storefront navigation; custom fields remain available in product editing.</p>
+      <form onSubmit={createCategory} className="mt-4 grid items-end gap-3 sm:grid-cols-[1fr_1fr_auto]">
+        <Field label="Category name" required><input required maxLength={100} value={categoryName} onChange={event => setCategoryName(event.target.value)} placeholder="e.g. Refurbished laptops" className={inputClass} /></Field>
+        <Field label="Parent category"><select value={categoryParentId} onChange={event => setCategoryParentId(event.target.value)} className={`${inputClass} bg-white`}><option value="">Main category</option>{categories.filter(category => category.parentId === null).map(category => <option key={category.id} value={category.id}>{category.name}</option>)}</select></Field>
+        <button className="h-11 bg-[#142c24] px-4 text-sm font-semibold text-white hover:bg-[#315ee8]">Add category</button>
+      </form>
+      <ul className="mt-4 grid items-start gap-2 xl:grid-cols-2">{categories.filter(category => category.parentId === null).map(category => <Fragment key={category.id}><CategoryRow category={category} onToggleVisible={(visible) => void saveCategory(category, { visible })} onError={onError} />{categories.filter(child => child.parentId === category.id).map(child => <CategoryRow key={child.id} category={child} onToggleVisible={(visible) => void saveCategory(child, { visible })} onError={onError} />)}</Fragment>)}</ul>
     </section>
   </div>
 }
 
 function CategoryRow({ category, onToggleVisible, onError }: { category: Category; onToggleVisible: (visible: boolean) => void; onError: (message: string) => void }) {
   const [open, setOpen] = useState(false)
-  return <li className="border border-[#edf0eb] text-sm">
+  return <li className={`border border-[#edf0eb] text-sm ${category.parentId !== null ? 'ml-5 border-l-2 border-l-[#c7f464]' : ''}`}>
     <div className="flex items-center justify-between gap-3 p-3">
-      <button type="button" onClick={() => setOpen(!open)} className="min-w-0 flex-1 truncate text-left font-semibold hover:text-[#315ee8]" title="Manage custom fields">{category.name}</button>
+      <button type="button" onClick={() => setOpen(!open)} className="min-w-0 flex-1 truncate text-left font-semibold hover:text-[#315ee8]" title="Manage custom fields">{category.parentName ? `${category.parentName} / ` : ''}{category.name}</button>
       <button type="button" onClick={() => setOpen(!open)} className="shrink-0 text-xs font-semibold text-[#315ee8]">{open ? 'Hide fields' : 'Custom fields'}</button>
       <label className="flex shrink-0 items-center gap-2 text-xs text-[#68736c]"><input type="checkbox" checked={category.visible} onChange={event => onToggleVisible(event.target.checked)} className="accent-[#315ee8]" /> Visible</label>
     </div>

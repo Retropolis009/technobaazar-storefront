@@ -29,6 +29,10 @@ CATEGORY_SORT_ORDER = [
     'Graphics Cards', 'Used Graphics Cards', 'Processors', 'Motherboards', 'Memory', 'Storage',
     'Power Supplies', 'Cases & Cooling', 'Laptops', 'Used Laptops', 'Monitors', 'Audio', 'Accessories',
 ]
+CATEGORY_DEFAULT_PARENTS = {
+    'Used Graphics Cards': 'Graphics Cards',
+    'Used Laptops': 'Laptops',
+}
 ORDER_STATUSES = {'pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'}
 PAYMENT_METHODS = {'cash_on_delivery', 'bank_transfer_manual'}
 PAYMENT_STATUSES = {'unpaid', 'pending', 'paid', 'due_on_delivery', 'refunded'}
@@ -156,10 +160,13 @@ class Category(db.Model):
     slug = db.Column(db.String(100), unique=True, nullable=False, index=True)
     sort_order = db.Column(db.Integer, nullable=False, default=0)
     visible = db.Column(db.Boolean, nullable=False, default=True)
+    parent_id = db.Column(db.Integer, db.ForeignKey('category.id', ondelete='CASCADE'), nullable=True, index=True)
+    parent = db.relationship('Category', remote_side=[id], backref=db.backref('children', lazy='select'))
 
     def as_dict(self):
         return {'id': self.id, 'name': self.name, 'slug': self.slug,
-                'sortOrder': self.sort_order, 'visible': self.visible}
+                'sortOrder': self.sort_order, 'visible': self.visible,
+                'parentId': self.parent_id, 'parentName': self.parent.name if self.parent else None}
 
 
 class CategoryCustomField(db.Model):
@@ -528,7 +535,10 @@ def create_app():
                 db.session.add(StoreSetting(key='low_stock_threshold', value='3'))
             for index, name in enumerate(CATEGORY_SORT_ORDER):
                 if not Category.query.filter_by(name=name).first():
-                    db.session.add(Category(name=name, slug=slugify(name), sort_order=(index + 1) * 10, visible=True))
+                    parent_name = CATEGORY_DEFAULT_PARENTS.get(name)
+                    parent = Category.query.filter_by(name=parent_name).first() if parent_name else None
+                    db.session.add(Category(name=name, slug=slugify(name), sort_order=(index + 1) * 10,
+                                            visible=True, parent=parent))
             for category_name, fields in CATEGORY_FIELD_SEEDS.items():
                 for order, (label, placeholder) in enumerate(fields):
                     if not CategoryCustomField.query.filter_by(category_name=category_name, label=label).first():
@@ -830,7 +840,9 @@ def create_app():
     @app.get('/api/categories')
     def list_categories():
         ensure_store_defaults()
-        rows = Category.query.filter_by(visible=True).order_by(Category.sort_order, Category.name).all()
+        rows = Category.query.filter(Category.visible.is_(True)).filter(
+            db.or_(Category.parent_id.is_(None), Category.parent.has(visible=True))
+        ).order_by(Category.sort_order, Category.name).all()
         return jsonify([row.as_dict() for row in rows])
 
     @app.get('/api/site-content')
@@ -1281,7 +1293,7 @@ def create_app():
         if any(key not in data for key in required):
             return jsonify({'error': 'slug, name, category, brand, and priceValue are required'}), 400
         strings = {key: valid_text(data, key, maximum, required=True) for key, maximum in {'slug': 180, 'name': 240, 'category': 100, 'brand': 120}.items()}
-        if strings['category'] not in PRODUCT_CATEGORIES:
+        if strings['category'] not in PRODUCT_CATEGORIES and not Category.query.filter_by(name=strings['category']).first():
             return jsonify({'error': 'Choose one of the existing product categories.'}), 400
         price = positive_int(data.get('priceValue'))
         compare_at = data.get('compareAtPrice')
@@ -1364,7 +1376,7 @@ def create_app():
                         return jsonify({'error': 'image must be a relative path or an HTTP(S) URL.'}), 400
                 elif incoming == 'category':
                     value = valid_text({incoming: value}, incoming, 100, required=True)
-                    if value is False or value not in PRODUCT_CATEGORIES:
+                    if value is False or (value not in PRODUCT_CATEGORIES and not Category.query.filter_by(name=value).first()):
                         return jsonify({'error': 'Choose one of the existing product categories.'}), 400
                 else:
                     maximum = {'name': 240, 'brand': 120, 'detail': 300, 'description': 5000, 'badge': 100, 'imageAlt': 300}[incoming]
@@ -1511,6 +1523,36 @@ def create_app():
         ensure_store_defaults()
         return jsonify([row.as_dict() for row in Category.query.order_by(Category.sort_order, Category.name).all()])
 
+    @app.post('/api/admin/categories')
+    def create_category():
+        denied = require_admin()
+        if denied:
+            return denied
+        ensure_store_defaults()
+        data = json_object() or {}
+        name = valid_text(data, 'name', 100, required=True)
+        parent_id = data.get('parentId')
+        if not name or name is False:
+            return jsonify({'error': 'Enter a category name up to 100 characters.'}), 400
+        if Category.query.filter(db.func.lower(Category.name) == name.lower()).first():
+            return jsonify({'error': 'A category with that name already exists.'}), 409
+        parent = None
+        if parent_id is not None:
+            parent_id = positive_int(parent_id)
+            if parent_id is None:
+                return jsonify({'error': 'Choose a valid parent category.'}), 400
+            parent = db.session.get(Category, parent_id)
+            if not parent or parent.parent_id is not None:
+                return jsonify({'error': 'Subcategories must be created under a main category.'}), 400
+        slug = slugify(name)
+        if not slug or Category.query.filter_by(slug=slug).first():
+            return jsonify({'error': 'That category name has an invalid or duplicate URL slug.'}), 409
+        siblings = Category.query.filter_by(parent_id=parent.id if parent else None).count()
+        category = Category(name=name, slug=slug, parent=parent, sort_order=(siblings + 1) * 10, visible=True)
+        db.session.add(category)
+        db.session.commit()
+        return jsonify(category.as_dict()), 201
+
     @app.put('/api/admin/categories/<int:category_id>')
     def update_category(category_id):
         denied = require_admin()
@@ -1529,6 +1571,14 @@ def create_app():
             if order is None or order > 100000:
                 return jsonify({'error': 'sortOrder must be between 0 and 100000.'}), 400
             category.sort_order = order
+        if 'parentId' in data:
+            parent_id = positive_int(data['parentId']) if data['parentId'] is not None else None
+            parent = db.session.get(Category, parent_id) if parent_id is not None else None
+            if parent_id is not None and (not parent or parent.id == category.id or parent.parent_id is not None):
+                return jsonify({'error': 'Choose a main category as the parent.'}), 400
+            if category.children and parent_id is not None:
+                return jsonify({'error': 'A category with subcategories cannot be moved under another category.'}), 400
+            category.parent = parent
         db.session.commit()
         return jsonify(category.as_dict())
 
@@ -1555,7 +1605,7 @@ def create_app():
         category = valid_text(data, 'category', 100, required=True)
         label = valid_text(data, 'label', 100, required=True)
         placeholder = valid_text(data, 'placeholder', 200) or ''
-        if not category or category is False or category not in PRODUCT_CATEGORIES:
+        if not category or category is False or (category not in PRODUCT_CATEGORIES and not Category.query.filter_by(name=category).first()):
             return jsonify({'error': 'Choose one of the existing product categories.'}), 400
         if not label or label is False:
             return jsonify({'error': 'Enter a field label up to 100 characters.'}), 400

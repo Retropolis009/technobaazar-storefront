@@ -26,23 +26,29 @@ interface PageActions {
   products: Product[]
   favorites: string[]
   content: LandingContent
+  categories: Category[]
   onAddToCart: (product: Product, quantity?: number) => void
   onToggleFavorite: (productName: string) => void
 }
 
 const DEFAULT_SETTINGS: StoreSettings = { deliveryFee: 350, freeShippingThreshold: 0, cities: [] }
 
-function CollectionRoute({ products: catalog, onAddToCart, onToggleFavorite, favorites }: PageActions) {
+function CollectionRoute({ products: catalog, categories, onAddToCart, onToggleFavorite, favorites }: PageActions) {
   const { categorySlug: slug = '' } = useParams()
-  const category = categoryFromSlug(slug)
+  const category = categoryFromSlug(slug, categories.length ? ['All gear', ...categories.map(item => item.name)] : undefined)
 
   if (!category) return <NotFoundPage />
 
-  const collectionProducts = catalog.filter((product) => productMatchesCategory(product, category))
+  const selectedCategory = categories.find(item => item.name === category)
+  const categoryNames = selectedCategory?.parentId === null
+    ? [category, ...categories.filter(item => item.parentId === selectedCategory.id).map(item => item.name)]
+    : [category]
+  const collectionProducts = catalog.filter((product) => categoryNames.some(name => productMatchesCategory(product, name)))
 
   return (
     <CollectionPage
       category={category}
+      categories={categories}
       products={collectionProducts}
       favorites={favorites}
       onAddToCart={onAddToCart}
@@ -75,7 +81,7 @@ function App() {
   const [catalog, setCatalog] = useState<Product[]>([])
   const [content, setContent] = useState<LandingContent>(DEFAULT_LANDING_CONTENT)
   const [settings, setSettings] = useState<StoreSettings>(DEFAULT_SETTINGS)
-  const [visibleCategories, setVisibleCategories] = useState<string[] | null>(null)
+  const [storeCategories, setStoreCategories] = useState<Category[]>([])
   const [search, setSearch] = useState('')
   const [cart, setCart] = useState<Record<string, number>>(() => readStored('tb-cart', {}))
   const [favorites, setFavorites] = useState<string[]>(() => readStored('tb-favorites', []))
@@ -99,9 +105,15 @@ function App() {
   }, [search, catalog])
 
   const activeDepartments = useMemo(() => {
-    if (!visibleCategories) return departments
-    return departments.filter((department) => visibleCategories.includes(department.name))
-  }, [visibleCategories])
+    if (!storeCategories.length) return departments
+    return storeCategories
+      .filter(category => category.parentId === null)
+      .map(category => ({
+        name: category.name,
+        icon: departments.find(department => department.name === category.name)?.icon ?? departments[0].icon,
+        subcategories: storeCategories.filter(child => child.parentId === category.id).map(child => child.name),
+      }))
+  }, [storeCategories])
 
   useEffect(() => {
     apiRequest<{ initialized: boolean; products: Product[] }>('/api/catalog')
@@ -113,10 +125,14 @@ function App() {
     apiRequest<StoreSettings>('/api/store-settings')
       .then(data => { if (data && typeof data.deliveryFee === 'number') setSettings(data) })
       .catch(() => undefined)
-    apiRequest<Category[]>('/api/categories')
-      .then(data => { if (Array.isArray(data) && data.length) setVisibleCategories(data.map(category => category.name)) })
-      .catch(() => undefined)
   }, [])
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/admin')) return
+    apiRequest<Category[]>('/api/categories')
+      .then(data => { if (Array.isArray(data)) setStoreCategories(data) })
+      .catch(() => undefined)
+  }, [location.pathname])
 
   useEffect(() => {
     let active = true
@@ -264,7 +280,7 @@ function App() {
     navigate('/collections/all-gear')
   }
 
-  const pageActions = { products: catalog, favorites, content, onAddToCart: addToCart, onToggleFavorite: toggleFavorite }
+  const pageActions = { products: catalog, favorites, content, categories: storeCategories, onAddToCart: addToCart, onToggleFavorite: toggleFavorite }
 
   return (
     <div className="min-h-screen bg-[#f5f6f2] text-[#15201c]">

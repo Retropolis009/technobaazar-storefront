@@ -1,9 +1,21 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { categories, categorySlug } from '../catalog'
+import { ChevronDown, ChevronRight } from 'lucide-react'
+import type { Category } from '../api'
+import { categorySlug, departments } from '../catalog'
+
+const fallbackCategories: Category[] = [
+  ...departments.flatMap((department, index) => [
+    { id: index + 1, name: department.name, slug: categorySlug(department.name), sortOrder: index * 10, visible: true, parentId: null, parentName: null },
+    ...(department.subcategories ?? []).map((name, childIndex) => ({ id: 1000 + index * 10 + childIndex, name, slug: categorySlug(name), sortOrder: childIndex * 10, visible: true, parentId: index + 1, parentName: department.name })),
+  ]),
+  { id: 99, name: 'Accessories', slug: 'accessories', sortOrder: 999, visible: true, parentId: null, parentName: null },
+]
 
 interface CollectionSidebarProps {
   idPrefix: string
   activeCategory: string
+  categories: Category[]
   brands: string[]
   minPrice: string
   maxPrice: string
@@ -19,6 +31,7 @@ interface CollectionSidebarProps {
 function CollectionSidebar({
   idPrefix,
   activeCategory,
+  categories,
   brands,
   minPrice,
   maxPrice,
@@ -30,21 +43,32 @@ function CollectionSidebar({
   onSortChange,
   onReset,
 }: CollectionSidebarProps) {
+  const [expanded, setExpanded] = useState<Record<number, boolean>>({})
+  const categoryItems = categories.length ? categories : fallbackCategories
+  const parents = categoryItems.filter(category => category.parentId === null)
   return (
     <div className="space-y-7 text-sm">
       <section aria-labelledby={`${idPrefix}-sidebar-categories`}>
         <h2 id={`${idPrefix}-sidebar-categories`} className="mb-3 text-xs font-bold uppercase tracking-[0.12em]">Categories</h2>
         <nav className="space-y-1" aria-label="Shop categories">
-          {categories.map((category) => (
-            <Link
-              key={category}
-              to={`/collections/${categorySlug(category)}`}
-              aria-current={category === activeCategory ? 'page' : undefined}
-              className={`flex min-h-9 items-center justify-between border-l-2 px-3 text-xs transition ${category === activeCategory ? 'border-[#315ee8] bg-white font-bold text-[#315ee8]' : 'border-transparent text-[#5c675f] hover:bg-white hover:text-[#15201c]'}`}
-            >
-              {category}<span className="text-[10px] text-[#9aa29b]">›</span>
-            </Link>
-          ))}
+          <Link to="/collections/all-gear" aria-current={activeCategory === 'All gear' ? 'page' : undefined} className={`flex min-h-9 items-center justify-between border-l-2 px-3 text-xs transition ${activeCategory === 'All gear' ? 'border-[#315ee8] bg-white font-bold text-[#315ee8]' : 'border-transparent text-[#5c675f] hover:bg-white hover:text-[#15201c]'}`}>
+            All gear<span className="text-[10px] text-[#9aa29b]">›</span>
+          </Link>
+          {parents.map((category) => {
+            const children = categoryItems.filter(child => child.parentId === category.id)
+            const isExpanded = expanded[category.id] ?? true
+            return <div key={category.id}>
+            <div className={`flex min-h-9 items-center justify-between border-l-2 pl-3 pr-1 text-xs transition ${category.name === activeCategory ? 'border-[#315ee8] bg-white font-bold text-[#315ee8]' : 'border-transparent text-[#5c675f] hover:bg-white hover:text-[#15201c]'}`}>
+              <Link to={`/collections/${categorySlug(category.name)}`} aria-current={category.name === activeCategory ? 'page' : undefined} className="flex min-h-9 flex-1 items-center">
+                {category.name}
+              </Link>
+              {children.length > 0 && <button type="button" aria-label={`${isExpanded ? 'Hide' : 'Show'} ${category.name} subcategories`} aria-expanded={isExpanded} onClick={() => setExpanded(current => ({ ...current, [category.id]: !isExpanded }))} className="grid size-8 place-items-center text-[#68736c] hover:text-[#315ee8]">{isExpanded ? <ChevronDown size={15}/> : <ChevronRight size={15}/>}</button>}
+            </div>
+            {children.length > 0 && isExpanded && <div className="ml-4 border-l border-[#dfe4dc] pl-2">
+              {children.map(child => <Link key={child.id} to={`/collections/${categorySlug(child.name)}`} aria-current={child.name === activeCategory ? 'page' : undefined} className={`flex min-h-8 items-center px-2 text-xs transition ${child.name === activeCategory ? 'font-bold text-[#315ee8]' : 'text-[#68736c] hover:text-[#315ee8]'}`}>{child.name}</Link>)}
+            </div>}
+            </div>
+          })}
         </nav>
       </section>
 

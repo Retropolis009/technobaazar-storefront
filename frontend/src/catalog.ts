@@ -8,13 +8,13 @@ import {
   MemoryStick,
   Monitor,
   Plug,
-  Recycle,
   type LucideIcon,
 } from 'lucide-react'
 
 export interface Department {
   name: string
   icon: LucideIcon
+  subcategories?: string[]
 }
 
 export interface ProductNote {
@@ -70,28 +70,29 @@ export const PLACEHOLDER_IMAGE =
 
 export const departments: Department[] = [
   { name: 'Processors', icon: Cpu },
-  { name: 'Graphics Cards', icon: Monitor },
-  { name: 'Used Graphics Cards', icon: Recycle },
+  { name: 'Graphics Cards', icon: Monitor, subcategories: ['Used Graphics Cards'] },
   { name: 'Motherboards', icon: CircuitBoard },
   { name: 'Memory', icon: MemoryStick },
   { name: 'Storage', icon: HardDrive },
   { name: 'Power Supplies', icon: Plug },
   { name: 'Cases & Cooling', icon: Fan },
-  { name: 'Laptops', icon: Laptop },
-  { name: 'Used Laptops', icon: Recycle },
+  { name: 'Laptops', icon: Laptop, subcategories: ['Used Laptops'] },
   { name: 'Monitors', icon: Monitor },
   { name: 'Audio', icon: Headphones },
 ]
 
-export const categories = ['All gear', ...departments.map(({ name }) => name), 'Accessories']
+export const categories = [
+  'All gear',
+  ...departments.flatMap(({ name, subcategories = [] }) => [name, ...subcategories]),
+  'Accessories',
+]
 
 export function categorySlug(category: string) {
   return category.toLowerCase().replaceAll('&', ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 }
 
-export function categoryFromSlug(slug: string) {
-  if (slug === 'accessories') return 'Accessories'
-  return categories.find((category) => categorySlug(category) === slug)
+export function categoryFromSlug(slug: string, availableCategories: string[] = categories) {
+  return availableCategories.find((category) => categorySlug(category) === slug)
 }
 
 export function productMatchesCategory(product: Product, category: string) {

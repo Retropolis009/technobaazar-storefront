@@ -28,7 +28,7 @@ function DepartmentSection({
       </div>
       <div className="grid grid-cols-2 border-l border-t border-[#dfe4dc] sm:grid-cols-3 lg:grid-cols-6">
         {departments.map(({ name, icon: Icon }, index) => (
-          <button type="button" onClick={() => onSelectCategory(name)} key={name} className="department-tile group">
+          <button type="button" onClick={() => onSelectCategory(name)} key={name} className="department-tile group text-left">
             <span className={`department-icon ${index % 3 === 1 ? 'department-icon-lime' : ''}`}>
               <Icon size={23} strokeWidth={1.6} />
             </span>

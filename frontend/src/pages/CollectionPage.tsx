@@ -2,17 +2,19 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import CollectionSidebar from '../components/CollectionSidebar'
 import ProductCard from '../components/ProductCard'
+import type { Category } from '../api'
 import type { Product } from '../catalog'
 
 interface CollectionPageProps {
   category: string
+  categories: Category[]
   products: Product[]
   favorites: string[]
   onAddToCart: (product: Product) => void
   onToggleFavorite: (productName: string) => void
 }
 
-function CollectionPage({ category, products, favorites, onAddToCart, onToggleFavorite }: CollectionPageProps) {
+function CollectionPage({ category, categories, products, favorites, onAddToCart, onToggleFavorite }: CollectionPageProps) {
   const [minPrice, setMinPrice] = useState('')
   const [maxPrice, setMaxPrice] = useState('')
   const [selectedBrands, setSelectedBrands] = useState<string[]>([])
@@ -50,6 +52,7 @@ function CollectionPage({ category, products, favorites, onAddToCart, onToggleFa
 
   const sidebarProps = {
     activeCategory: category,
+    categories,
     brands,
     minPrice,
     maxPrice,
