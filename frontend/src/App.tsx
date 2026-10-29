@@ -278,6 +278,7 @@ function App() {
         menuOpen={menuOpen}
         onToggleMenu={() => setMenuOpen((open) => !open)}
         announcement={content.announcement}
+        content={content}
       />}
       <Routes>
         <Route
@@ -330,7 +331,7 @@ function App() {
         <Route path="/account" element={<AccountPage customer={customer} onAuthenticated={handleAuthenticated} onLogout={handleLogout} />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
-      {!isAdminRoute && <SiteFooter tagline={content.footer_tagline} />}
+      {!isAdminRoute && <SiteFooter content={content} />}
       {!isAdminRoute && <ToastNotice message={notice} onDismiss={() => setNotice('')} />}
     </div>
   )

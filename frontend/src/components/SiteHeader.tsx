@@ -11,6 +11,7 @@ import {
   Zap,
 } from 'lucide-react'
 import { categorySlug, type Department } from '../catalog'
+import { DEFAULT_LANDING_CONTENT, type LandingContent } from '../content'
 import AnnouncementBar from './AnnouncementBar'
 
 interface SiteHeaderProps {
@@ -23,6 +24,7 @@ interface SiteHeaderProps {
   menuOpen: boolean
   onToggleMenu: () => void
   announcement?: string
+  content?: LandingContent
 }
 
 function SiteHeader({
@@ -35,6 +37,7 @@ function SiteHeader({
   menuOpen,
   onToggleMenu,
   announcement,
+  content = DEFAULT_LANDING_CONTENT,
 }: SiteHeaderProps) {
   return (
     <>
@@ -50,14 +53,14 @@ function SiteHeader({
             {menuOpen ? <X size={19} /> : <Menu size={19} />}
           </button>
 
-          <Link to="/" className="group flex shrink-0 items-center gap-2.5" aria-label="TechnoBaazar home">
+          <Link to="/" className="group flex shrink-0 items-center gap-2.5" aria-label={`${content.header_brand_prefix}${content.header_brand_accent} home`}>
             <span className="grid size-9 place-items-center bg-[#c7f464] text-[#15201c] transition-transform group-hover:-rotate-6">
               <Zap size={20} fill="currentColor" strokeWidth={1.8} aria-hidden="true" />
             </span>
             <span className="font-display text-[17px] font-bold leading-none tracking-[-0.06em] sm:text-[19px]">
-              TECHNO<span className="text-[#315ee8]">BAAZAR</span>
+              {content.header_brand_prefix}<span className="text-[#315ee8]">{content.header_brand_accent}</span>
               <span className="hidden font-sans text-[9px] font-bold tracking-[0.2em] text-[#69736d] sm:block sm:pt-1">
-                SUPPLY CO.
+                {content.header_tagline}
               </span>
             </span>
           </Link>
@@ -72,7 +75,7 @@ function SiteHeader({
               type="search"
               value={search}
               onChange={(event) => onSearchChange(event.target.value)}
-              placeholder="Search laptops, components, gear..."
+              placeholder={content.header_search_placeholder}
               aria-label="Search products"
               className="search-field h-full w-full bg-transparent px-3 text-sm outline-none placeholder:text-[#929a94]"
             />
@@ -102,7 +105,7 @@ function SiteHeader({
             type="search"
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Search the store"
+            placeholder={content.header_mobile_search_placeholder}
             aria-label="Search products"
             className="search-field h-full w-full bg-transparent px-2.5 text-sm outline-none placeholder:text-[#929a94]"
           />
@@ -119,7 +122,7 @@ function SiteHeader({
             </Link>
           ))}
           <Link to="/about" className="category-link category-link-wide">
-            Why TechnoBaazar <ArrowUpRight size={13} />
+            {content.header_about_text} <ArrowUpRight size={13} />
           </Link>
         </nav>
       </header>

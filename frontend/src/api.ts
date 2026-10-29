@@ -65,6 +65,14 @@ export interface Category {
   visible: boolean
 }
 
+export interface CategoryField {
+  id: number
+  category: string
+  label: string
+  placeholder: string
+  sortOrder: number
+}
+
 export interface CouponPreview {
   code: string
   subtotal: number

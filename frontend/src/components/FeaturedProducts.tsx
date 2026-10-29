@@ -29,7 +29,7 @@ function FeaturedProducts({
     ;(groups[product.category] ??= []).push(product)
     return groups
   }, {})
-  const categoryOrder = ['Graphics Cards', 'Processors', 'Motherboards', 'Memory', 'Storage', 'Power Supplies', 'Cases & Cooling', 'Laptops', 'Monitors', 'Audio', 'Accessories']
+  const categoryOrder = ['Graphics Cards', 'Used Graphics Cards', 'Processors', 'Motherboards', 'Memory', 'Storage', 'Power Supplies', 'Cases & Cooling', 'Laptops', 'Used Laptops', 'Monitors', 'Audio', 'Accessories']
   const orderedGroups = Object.entries(groupedProducts).sort(([a], [b]) => categoryOrder.indexOf(a) - categoryOrder.indexOf(b))
 
   return (
