@@ -23,11 +23,6 @@ function ProductCard({ product, isFavorite, onAddToCart, onToggleFavorite }: Pro
             className="size-full object-cover transition duration-500 group-hover:scale-[1.04]"
           />
         </Link>
-        {product.badge && (
-          <span className="absolute left-2.5 top-2.5 bg-[#c7f464] px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-[#142c24]">
-            {product.badge}
-          </span>
-        )}
         <button
           type="button"
           onClick={() => onAddToCart(product)}

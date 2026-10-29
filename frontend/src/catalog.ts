@@ -8,6 +8,7 @@ import {
   MemoryStick,
   Monitor,
   Plug,
+  Recycle,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -70,12 +71,14 @@ export const PLACEHOLDER_IMAGE =
 export const departments: Department[] = [
   { name: 'Processors', icon: Cpu },
   { name: 'Graphics Cards', icon: Monitor },
+  { name: 'Used Graphics Cards', icon: Recycle },
   { name: 'Motherboards', icon: CircuitBoard },
   { name: 'Memory', icon: MemoryStick },
   { name: 'Storage', icon: HardDrive },
   { name: 'Power Supplies', icon: Plug },
   { name: 'Cases & Cooling', icon: Fan },
   { name: 'Laptops', icon: Laptop },
+  { name: 'Used Laptops', icon: Recycle },
   { name: 'Monitors', icon: Monitor },
   { name: 'Audio', icon: Headphones },
 ]

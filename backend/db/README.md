@@ -10,6 +10,7 @@ revisions in `backend/migrations/versions/`, written as plain Postgres-first
 | `001_catalog_state.sql` | `catalog_state` |
 | `002_customers_orders.sql` | `customer`, `cart_item`, `favorite`, `order`, `order_item`, stock columns |
 | `003_store_cms.sql` | `category`, `product_content`, guest carts, `coupon`, `store_setting`, `delivery_city`, richer `order`, `order_stock_movement`, `site_content`, `site_content_revision` |
+| `004_category_custom_fields.sql` | `category_custom_field` (per-category specification shortcuts) |
 
 All files are idempotent (`IF NOT EXISTS`) and safe to rerun.
 

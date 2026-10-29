@@ -22,12 +22,12 @@ db = SQLAlchemy()
 migrate = Migrate()
 
 PRODUCT_CATEGORIES = {
-    'Graphics Cards', 'Processors', 'Motherboards', 'Memory', 'Storage',
-    'Power Supplies', 'Cases & Cooling', 'Laptops', 'Monitors', 'Audio', 'Accessories',
+    'Graphics Cards', 'Used Graphics Cards', 'Processors', 'Motherboards', 'Memory', 'Storage',
+    'Power Supplies', 'Cases & Cooling', 'Laptops', 'Used Laptops', 'Monitors', 'Audio', 'Accessories',
 }
 CATEGORY_SORT_ORDER = [
-    'Graphics Cards', 'Processors', 'Motherboards', 'Memory', 'Storage',
-    'Power Supplies', 'Cases & Cooling', 'Laptops', 'Monitors', 'Audio', 'Accessories',
+    'Graphics Cards', 'Used Graphics Cards', 'Processors', 'Motherboards', 'Memory', 'Storage',
+    'Power Supplies', 'Cases & Cooling', 'Laptops', 'Used Laptops', 'Monitors', 'Audio', 'Accessories',
 ]
 ORDER_STATUSES = {'pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'}
 PAYMENT_METHODS = {'cash_on_delivery', 'bank_transfer_manual'}
@@ -71,7 +71,16 @@ SITE_CONTENT_DEFAULTS = {
     'delivery_note': 'Nationwide delivery across Pakistan.',
     'payment_note': 'Pay cash on delivery, or transfer to the account shared after checkout.',
     'order_confirmation_note': 'After your order, our team contacts you by phone or WhatsApp to confirm delivery.',
+    'header_brand_prefix': 'TECHNO',
+    'header_brand_accent': 'BAAZAR',
+    'header_tagline': 'SUPPLY CO.',
+    'header_search_placeholder': 'Search laptops, components, gear...',
+    'header_mobile_search_placeholder': 'Search the store',
+    'header_about_text': 'Why TechnoBaazar',
+    'footer_brand_text': 'TECHNOBAAZAR',
     'footer_tagline': 'Good gear for whatever you\u2019re building.',
+    'footer_admin_text': 'Admin',
+    'footer_home_text': 'Back to home',
 }
 SITE_CONTENT_URL_FIELDS = {'hero_cta_url', 'hero_image'}
 SITE_CONTENT_STRUCTURED_FIELDS = {'benefits'}
@@ -79,7 +88,11 @@ SITE_CONTENT_LIMITS = {key: 500 for key in SITE_CONTENT_DEFAULTS}
 SITE_CONTENT_LIMITS.update({'hero_subtitle': 500, 'featured_subtitle': 500, 'benefits': 4000,
                              'checkout_note': 500, 'delivery_note': 300, 'payment_note': 500,
                              'order_confirmation_note': 500, 'footer_tagline': 300,
-                             'hero_image': 2000, 'hero_image_alt': 300, 'hero_cta_url': 1000})
+                             'hero_image': 2000, 'hero_image_alt': 300, 'hero_cta_url': 1000,
+                             'header_brand_prefix': 40, 'header_brand_accent': 40, 'header_tagline': 60,
+                             'header_search_placeholder': 120, 'header_mobile_search_placeholder': 120,
+                             'header_about_text': 60, 'footer_brand_text': 60,
+                             'footer_admin_text': 40, 'footer_home_text': 60})
 
 DELIVERY_CITIES_SEED = [
     ('karachi', 'Karachi', 350), ('lahore', 'Lahore', 350), ('islamabad', 'Islamabad', 350),
@@ -94,6 +107,36 @@ DELIVERY_CITIES_SEED = [
 
 UPLOAD_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp', '.gif'}
 UPLOAD_MAX_BYTES = 5 * 1024 * 1024
+
+# Starter specification shortcuts per category: (label, placeholder) pairs.
+CATEGORY_FIELD_SEEDS = {
+    'Graphics Cards': [('Chipset', 'e.g. GeForce RTX 5070'), ('Memory', 'e.g. 12GB GDDR7'),
+                       ('Interface', 'e.g. PCI Express 5.0'), ('Cooling', 'e.g. Dual-fan')],
+    'Used Graphics Cards': [('Chipset', 'e.g. GeForce RTX 3060'), ('Memory', 'e.g. 12GB GDDR6'),
+                            ('Condition', 'e.g. Tested, light use'), ('Warranty', 'e.g. 7-day check warranty')],
+    'Processors': [('Cores', 'e.g. 8 cores / 16 threads'), ('Boost clock', 'e.g. Up to 5.2GHz'),
+                   ('Socket', 'e.g. AM5'), ('Cache', 'e.g. 96MB 3D V-Cache')],
+    'Motherboards': [('Chipset', 'e.g. AMD B650'), ('Socket', 'e.g. AM5'),
+                     ('Memory', 'e.g. DDR5 support'), ('Form factor', 'e.g. ATX')],
+    'Memory': [('Capacity', 'e.g. 32GB total'), ('Kit', 'e.g. 2 x 16GB'),
+               ('Speed', 'e.g. 6000MT/s'), ('Type', 'e.g. DDR5')],
+    'Storage': [('Capacity', 'e.g. 1TB'), ('Form factor', 'e.g. M.2 2280'),
+                ('Interface', 'e.g. PCIe 4.0 NVMe'), ('Read speed', 'e.g. Up to 6000MB/s')],
+    'Power Supplies': [('Output', 'e.g. 850W continuous'), ('Efficiency', 'e.g. 80 PLUS Gold'),
+                       ('Modularity', 'e.g. Fully modular'), ('Standards', 'e.g. ATX 3.1')],
+    'Cases & Cooling': [('Form factor', 'e.g. Mid-tower, ATX'), ('Front panel', 'e.g. Mesh'),
+                        ('Included fans', 'e.g. Four ARGB fans'), ('Side panel', 'e.g. Tempered glass')],
+    'Laptops': [('Processor', 'e.g. Core Ultra 7'), ('Memory', 'e.g. 16GB'),
+                ('Storage', 'e.g. 1TB NVMe SSD'), ('Display', 'e.g. 14-inch high-resolution')],
+    'Used Laptops': [('Processor', 'e.g. Core i7 12th gen'), ('Memory', 'e.g. 16GB'),
+                     ('Condition', 'e.g. Grade A, new battery'), ('Warranty', 'e.g. 7-day check warranty')],
+    'Monitors': [('Panel', 'e.g. 27-inch QHD IPS'), ('Refresh rate', 'e.g. 180Hz'),
+                 ('Response time', 'e.g. 1ms'), ('Sync', 'e.g. Adaptive sync')],
+    'Audio': [('Type', 'e.g. Over-ear wireless'), ('Battery', 'e.g. Up to 40 hours'),
+              ('Connection', 'e.g. Bluetooth'), ('Noise control', 'e.g. Active cancellation')],
+    'Accessories': [('Compatibility', 'e.g. Windows and Mac'), ('Connection', 'e.g. USB-C / wireless'),
+                    ('Layout', 'e.g. 75% compact'), ('Extra', 'e.g. Hot-swappable')],
+}
 
 
 class Admin(db.Model):
@@ -117,6 +160,22 @@ class Category(db.Model):
     def as_dict(self):
         return {'id': self.id, 'name': self.name, 'slug': self.slug,
                 'sortOrder': self.sort_order, 'visible': self.visible}
+
+
+class CategoryCustomField(db.Model):
+    """Per-category specification shortcuts. The admin defines labels once per
+    category (e.g. VRAM, Chipset for Graphics Cards); the product editor then
+    offers them as one-click rows so listings stay consistent."""
+    id = db.Column(db.Integer, primary_key=True)
+    category_name = db.Column(db.String(100), nullable=False, index=True)
+    label = db.Column(db.String(100), nullable=False)
+    placeholder = db.Column(db.String(200), nullable=False, default='')
+    sort_order = db.Column(db.Integer, nullable=False, default=0)
+    __table_args__ = (db.UniqueConstraint('category_name', 'label'),)
+
+    def as_dict(self):
+        return {'id': self.id, 'category': self.category_name, 'label': self.label,
+                'placeholder': self.placeholder, 'sortOrder': self.sort_order}
 
 
 class Product(db.Model):
@@ -470,6 +529,11 @@ def create_app():
             for index, name in enumerate(CATEGORY_SORT_ORDER):
                 if not Category.query.filter_by(name=name).first():
                     db.session.add(Category(name=name, slug=slugify(name), sort_order=(index + 1) * 10, visible=True))
+            for category_name, fields in CATEGORY_FIELD_SEEDS.items():
+                for order, (label, placeholder) in enumerate(fields):
+                    if not CategoryCustomField.query.filter_by(category_name=category_name, label=label).first():
+                        db.session.add(CategoryCustomField(category_name=category_name, label=label,
+                                                           placeholder=placeholder, sort_order=(order + 1) * 10))
             for index, (city_slug, city_name, fee) in enumerate(DELIVERY_CITIES_SEED):
                 if not db.session.get(DeliveryCity, city_slug):
                     db.session.add(DeliveryCity(city_slug=city_slug, city_name=city_name,
@@ -1467,6 +1531,87 @@ def create_app():
             category.sort_order = order
         db.session.commit()
         return jsonify(category.as_dict())
+
+    @app.get('/api/admin/category-fields')
+    def admin_category_fields():
+        denied = require_admin()
+        if denied:
+            return denied
+        ensure_store_defaults()
+        category = request.args.get('category', '')
+        query = CategoryCustomField.query
+        if category:
+            query = query.filter_by(category_name=category)
+        rows = query.order_by(CategoryCustomField.category_name,
+                              CategoryCustomField.sort_order, CategoryCustomField.label).all()
+        return jsonify([row.as_dict() for row in rows])
+
+    @app.post('/api/admin/category-fields')
+    def create_category_field():
+        denied = require_admin()
+        if denied:
+            return denied
+        data = json_object() or {}
+        category = valid_text(data, 'category', 100, required=True)
+        label = valid_text(data, 'label', 100, required=True)
+        placeholder = valid_text(data, 'placeholder', 200) or ''
+        if not category or category is False or category not in PRODUCT_CATEGORIES:
+            return jsonify({'error': 'Choose one of the existing product categories.'}), 400
+        if not label or label is False:
+            return jsonify({'error': 'Enter a field label up to 100 characters.'}), 400
+        if placeholder is False:
+            return jsonify({'error': 'Placeholder must be at most 200 characters.'}), 400
+        if CategoryCustomField.query.filter_by(category_name=category, label=label).first():
+            return jsonify({'error': 'That field already exists for this category.'}), 409
+        top = CategoryCustomField.query.filter_by(category_name=category).order_by(
+            CategoryCustomField.sort_order.desc()).first()
+        field = CategoryCustomField(category_name=category, label=label, placeholder=placeholder,
+                                    sort_order=(top.sort_order + 10) if top else 10)
+        db.session.add(field)
+        db.session.commit()
+        return jsonify(field.as_dict()), 201
+
+    @app.put('/api/admin/category-fields/<int:field_id>')
+    def update_category_field(field_id):
+        denied = require_admin()
+        if denied:
+            return denied
+        field = db.session.get(CategoryCustomField, field_id)
+        if not field:
+            return jsonify({'error': 'Field not found.'}), 404
+        data = json_object() or {}
+        if 'label' in data:
+            label = valid_text(data, 'label', 100, required=True)
+            if not label or label is False:
+                return jsonify({'error': 'Enter a field label up to 100 characters.'}), 400
+            if label != field.label and CategoryCustomField.query.filter_by(
+                    category_name=field.category_name, label=label).first():
+                return jsonify({'error': 'That field already exists for this category.'}), 409
+            field.label = label
+        if 'placeholder' in data:
+            placeholder = valid_text(data, 'placeholder', 200) or ''
+            if placeholder is False:
+                return jsonify({'error': 'Placeholder must be at most 200 characters.'}), 400
+            field.placeholder = placeholder
+        if 'sortOrder' in data:
+            order = positive_int(data['sortOrder'], allow_zero=True)
+            if order is None or order > 100000:
+                return jsonify({'error': 'sortOrder must be between 0 and 100000.'}), 400
+            field.sort_order = order
+        db.session.commit()
+        return jsonify(field.as_dict())
+
+    @app.delete('/api/admin/category-fields/<int:field_id>')
+    def delete_category_field(field_id):
+        denied = require_admin()
+        if denied:
+            return denied
+        field = db.session.get(CategoryCustomField, field_id)
+        if not field:
+            return jsonify({'error': 'Field not found.'}), 404
+        db.session.delete(field)
+        db.session.commit()
+        return '', 204
 
     def validate_coupon_payload(data, existing=None):
         code = valid_text(data, 'code', 40, required=existing is None)

@@ -26,7 +26,16 @@ export interface LandingContent {
   delivery_note: string
   payment_note: string
   order_confirmation_note: string
+  header_brand_prefix: string
+  header_brand_accent: string
+  header_tagline: string
+  header_search_placeholder: string
+  header_mobile_search_placeholder: string
+  header_about_text: string
+  footer_brand_text: string
   footer_tagline: string
+  footer_admin_text: string
+  footer_home_text: string
 }
 
 export const DEFAULT_LANDING_CONTENT: LandingContent = {
@@ -58,7 +67,16 @@ export const DEFAULT_LANDING_CONTENT: LandingContent = {
   delivery_note: 'Nationwide delivery across Pakistan.',
   payment_note: 'Pay cash on delivery, or transfer to the account shared after checkout.',
   order_confirmation_note: 'After your order, our team contacts you by phone or WhatsApp to confirm delivery.',
+  header_brand_prefix: 'TECHNO',
+  header_brand_accent: 'BAAZAR',
+  header_tagline: 'SUPPLY CO.',
+  header_search_placeholder: 'Search laptops, components, gear...',
+  header_mobile_search_placeholder: 'Search the store',
+  header_about_text: 'Why TechnoBaazar',
+  footer_brand_text: 'TECHNOBAAZAR',
   footer_tagline: 'Good gear for whatever you\u2019re building.',
+  footer_admin_text: 'Admin',
+  footer_home_text: 'Back to home',
 }
 
 function parseBenefits(raw: unknown): Benefit[] {

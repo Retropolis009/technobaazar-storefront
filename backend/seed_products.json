@@ -245,5 +245,44 @@
     "badge": "Quick upgrade",
     "image": "https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?auto=format&fit=crop&w=760&q=85",
     "imageAlt": "Solid state storage drive"
+  },
+  {
+    "slug": "geforce-rtx-3060-used",
+    "name": "GeForce RTX 3060 12GB (Used)",
+    "category": "Used Graphics Cards",
+    "brand": "EVGA",
+    "detail": "12GB GDDR6 · Tested & cleaned",
+    "description": "A pre-loved GeForce RTX 3060 with 12GB of GDDR6 memory. Fully tested, cleaned, and repasted by our technicians. Ideal for 1080p gaming builds on a budget. Ships with a 7-day check warranty.",
+    "specifications": [
+      "Memory: 12GB GDDR6",
+      "Interface: PCI Express 4.0",
+      "Condition: Tested, cleaned, and repasted",
+      "Warranty: 7-day check warranty"
+    ],
+    "price": "Rs. 68,500",
+    "priceValue": 68500,
+    "badge": "Used deal",
+    "image": "https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=760&q=85",
+    "imageAlt": "Used graphics card on a workbench"
+  },
+  {
+    "slug": "thinkpad-t14-used",
+    "name": "ThinkPad T14 Gen 2 (Used)",
+    "category": "Used Laptops",
+    "brand": "Lenovo",
+    "detail": "Core i7 · 16GB · 512GB SSD",
+    "description": "A business-grade ThinkPad T14 in Grade A condition with an Intel Core i7 processor, 16GB of memory, and a fast 512GB SSD. Battery health verified above 80%. Ships with a 7-day check warranty.",
+    "specifications": [
+      "Processor: Intel Core i7 11th gen",
+      "Memory: 16GB",
+      "Storage: 512GB NVMe SSD",
+      "Condition: Grade A, battery above 80%",
+      "Warranty: 7-day check warranty"
+    ],
+    "price": "Rs. 112,000",
+    "priceValue": 112000,
+    "badge": "Used deal",
+    "image": "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=760&q=85",
+    "imageAlt": "Used business laptop on a desk"
   }
 ]
