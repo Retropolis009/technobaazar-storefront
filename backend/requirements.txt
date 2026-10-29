@@ -3,3 +3,6 @@ Flask-SQLAlchemy>=3.1,<4
 Flask-Migrate>=4.0,<5
 Flask-Cors>=5.0,<7
 python-dotenv>=1.0,<2
+gunicorn>=23,<24
+# Postgres driver for production (optional for SQLite dev):
+# psycopg[binary]>=3.1,<4

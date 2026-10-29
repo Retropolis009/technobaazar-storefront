@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
 import AboutPage from './pages/AboutPage'
 import AccountPage from './pages/AccountPage'
@@ -12,7 +12,8 @@ import AdminPage from './pages/AdminPage'
 import SiteFooter from './components/SiteFooter'
 import SiteHeader from './components/SiteHeader'
 import ToastNotice from './components/ToastNotice'
-import { apiRequest, type CartLine, type Customer } from './api'
+import { apiRequest, type CartLine, type Category, type Customer, type OrderSummary, type StoreSettings } from './api'
+import { DEFAULT_LANDING_CONTENT, normalizeLandingContent, type LandingContent } from './content'
 import {
   categoryFromSlug,
   categorySlug,
@@ -24,11 +25,14 @@ import {
 interface PageActions {
   products: Product[]
   favorites: string[]
+  content: LandingContent
   onAddToCart: (product: Product, quantity?: number) => void
   onToggleFavorite: (productName: string) => void
 }
 
-function CollectionRoute({ products: catalog, favorites, onAddToCart, onToggleFavorite }: PageActions) {
+const DEFAULT_SETTINGS: StoreSettings = { deliveryFee: 350, freeShippingThreshold: 0, cities: [] }
+
+function CollectionRoute({ products: catalog, onAddToCart, onToggleFavorite, favorites }: PageActions) {
   const { categorySlug: slug = '' } = useParams()
   const category = categoryFromSlug(slug)
 
@@ -47,7 +51,7 @@ function CollectionRoute({ products: catalog, favorites, onAddToCart, onToggleFa
   )
 }
 
-function ProductRoute({ products: catalog, favorites, onAddToCart, onToggleFavorite }: PageActions) {
+function ProductRoute({ products: catalog, favorites, content, onAddToCart, onToggleFavorite }: PageActions) {
   const { productSlug } = useParams()
   const product = catalog.find((item) => item.slug === productSlug)
 
@@ -59,6 +63,8 @@ function ProductRoute({ products: catalog, favorites, onAddToCart, onToggleFavor
       relatedProducts={catalog.filter((item) => item.category === product.category && item.slug !== product.slug).slice(0, 4)}
       favorites={favorites}
       isFavorite={favorites.includes(product.slug)}
+      deliveryNote={content.delivery_note}
+      paymentNote={content.payment_note}
       onAddToCart={onAddToCart}
       onToggleFavorite={onToggleFavorite}
     />
@@ -67,6 +73,9 @@ function ProductRoute({ products: catalog, favorites, onAddToCart, onToggleFavor
 
 function App() {
   const [catalog, setCatalog] = useState<Product[]>([])
+  const [content, setContent] = useState<LandingContent>(DEFAULT_LANDING_CONTENT)
+  const [settings, setSettings] = useState<StoreSettings>(DEFAULT_SETTINGS)
+  const [visibleCategories, setVisibleCategories] = useState<string[] | null>(null)
   const [search, setSearch] = useState('')
   const [cart, setCart] = useState<Record<string, number>>(() => readStored('tb-cart', {}))
   const [favorites, setFavorites] = useState<string[]>(() => readStored('tb-favorites', []))
@@ -76,6 +85,7 @@ function App() {
   const [notice, setNotice] = useState('')
   const navigate = useNavigate()
   const location = useLocation()
+  const cartTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const cartCount = Object.values(cart).reduce((total, quantity) => total + quantity, 0)
   const isAdminRoute = location.pathname.startsWith('/admin')
 
@@ -88,9 +98,23 @@ function App() {
     )
   }, [search, catalog])
 
+  const activeDepartments = useMemo(() => {
+    if (!visibleCategories) return departments
+    return departments.filter((department) => visibleCategories.includes(department.name))
+  }, [visibleCategories])
+
   useEffect(() => {
     apiRequest<{ initialized: boolean; products: Product[] }>('/api/catalog')
       .then(data => { if (data?.initialized) setCatalog(data.products as Product[]) })
+      .catch(() => undefined)
+    apiRequest<Record<string, unknown>>('/api/site-content')
+      .then(data => setContent(normalizeLandingContent(data)))
+      .catch(() => undefined)
+    apiRequest<StoreSettings>('/api/store-settings')
+      .then(data => { if (data && typeof data.deliveryFee === 'number') setSettings(data) })
+      .catch(() => undefined)
+    apiRequest<Category[]>('/api/categories')
+      .then(data => { if (Array.isArray(data) && data.length) setVisibleCategories(data.map(category => category.name)) })
       .catch(() => undefined)
   }, [])
 
@@ -99,15 +123,28 @@ function App() {
     apiRequest<{ authenticated: boolean; id: number | null; email: string | null; name: string | null }>('/api/customer/session')
       .then(async (sessionData) => {
         if (!active) return
+        try {
+          // Unified server cart: works for guests (cookie cart) and customers.
+          const serverCart = await apiRequest<{ items: CartLine[] } | CartLine[]>('/api/cart')
+          if (!active) return
+          const lines = Array.isArray(serverCart) ? serverCart : serverCart.items
+          if (lines.length || sessionData.authenticated) {
+            setCart(Object.fromEntries(lines.map(item => [item.slug, item.quantity])))
+          }
+        } catch {
+          // Backend unavailable: keep the localStorage cart already loaded.
+        }
+        if (!active) return
         if (sessionData.authenticated && sessionData.id && sessionData.email && sessionData.name) {
-          const [serverCart, serverFavorites] = await Promise.all([
-            apiRequest<CartLine[]>('/api/customer/cart'),
-            apiRequest<string[]>('/api/customer/favorites'),
-          ])
+          try {
+            const serverFavorites = await apiRequest<string[]>('/api/customer/favorites')
+            if (!active) return
+            setFavorites(serverFavorites)
+          } catch {
+            // Keep local favorites when the backend is unreachable.
+          }
           if (!active) return
           setCustomer({ id: sessionData.id, email: sessionData.email, name: sessionData.name })
-          setCart(Object.fromEntries(serverCart.map(item => [item.slug, item.quantity])))
-          setFavorites(serverFavorites)
         }
       })
       .catch(() => undefined)
@@ -117,12 +154,13 @@ function App() {
 
   useEffect(() => {
     if (!accountReady) return
-    if (customer) {
-      void apiRequest('/api/customer/cart', { method: 'PUT', body: JSON.stringify({ items: Object.entries(cart).map(([slug, quantity]) => ({ slug, quantity })) }) }).catch(() => undefined)
-    } else {
-      writeStored('tb-cart', cart)
-    }
-  }, [accountReady, cart, customer])
+    writeStored('tb-cart', cart)
+    if (cartTimer.current) clearTimeout(cartTimer.current)
+    cartTimer.current = setTimeout(() => {
+      void apiRequest('/api/cart', { method: 'PUT', body: JSON.stringify({ items: Object.entries(cart).map(([slug, quantity]) => ({ slug, quantity })) }) }).catch(() => undefined)
+    }, 400)
+    return () => { if (cartTimer.current) clearTimeout(cartTimer.current) }
+  }, [accountReady, cart])
 
   useEffect(() => {
     if (!accountReady) return
@@ -147,15 +185,31 @@ function App() {
     navigate(`/collections/${categorySlug(category)}`)
   }
 
+  function stockLimit(product: Product) {
+    return (product.trackStock ?? true) ? Math.min(99, product.stockQuantity ?? 99) : 99
+  }
+
   function addToCart(product: Product, quantity = 1) {
-    const maximum = Math.min(99, product.stockQuantity ?? 99)
+    const maximum = stockLimit(product)
     const currentQuantity = cart[product.slug] ?? 0
-    if (currentQuantity >= maximum || currentQuantity + quantity > maximum) {
-      setNotice(maximum === 0 ? `${product.name} is currently out of stock.` : `Only ${maximum} available for ${product.name}.`)
+    if (maximum === 0) {
+      setNotice(`${product.name} is currently out of stock.`)
+      return
+    }
+    if (currentQuantity + quantity > maximum) {
+      setNotice(`Only ${maximum} available for ${product.name}.`)
+      setCart((current) => ({ ...current, [product.slug]: maximum }))
       return
     }
     setCart((current) => ({ ...current, [product.slug]: currentQuantity + quantity }))
     setNotice(`${quantity} × ${product.name} added to your bag.`)
+  }
+
+  function updateQuantity(productSlug: string, quantity: number) {
+    const product = catalog.find((item) => item.slug === productSlug)
+    const maximum = product ? stockLimit(product) : 99
+    const clamped = Math.max(1, Math.min(maximum, quantity))
+    setCart((current) => ({ ...current, [productSlug]: clamped }))
   }
 
   function removeFromCart(productSlug: string) {
@@ -174,18 +228,19 @@ function App() {
     )
   }
 
-  function handleAuthenticated(nextCustomer: Customer, nextCart: Record<string, number>, nextFavorites: string[]) {
-    const availableSlugs = new Set(catalog.map(product => product.slug))
+  async function handleAuthenticated(nextCustomer: Customer) {
     setCustomer(nextCustomer)
-    setCart(current => {
-      const merged = { ...current }
-      for (const [slug, quantity] of Object.entries(nextCart)) {
-        if (availableSlugs.has(slug)) merged[slug] = Math.min(99, (merged[slug] ?? 0) + quantity)
-      }
-      return merged
-    })
-    setFavorites(current => [...new Set([...current, ...nextFavorites].filter(slug => availableSlugs.has(slug)))])
     setAccountReady(true)
+    // The server already merged the guest bag into the account bag on sign-in.
+    try {
+      const serverCart = await apiRequest<{ items: CartLine[] }>('/api/cart')
+      const availableSlugs = new Set(catalog.map(product => product.slug))
+      setCart(Object.fromEntries(serverCart.items.filter(item => availableSlugs.has(item.slug)).map(item => [item.slug, item.quantity])))
+      const serverFavorites = await apiRequest<string[]>('/api/customer/favorites')
+      setFavorites(serverFavorites.filter(slug => availableSlugs.has(slug)))
+    } catch {
+      // Keep the local bag when the sync fails.
+    }
   }
 
   function handleLogout() {
@@ -194,11 +249,9 @@ function App() {
     setFavorites([])
   }
 
-  async function placeOrder(details: { customerName: string; phone: string; address: string }) {
-    const order = await apiRequest<{ orderNumber: string }>('/api/customer/orders', { method: 'POST', body: JSON.stringify(details) })
+  function handleOrderPlaced(order: OrderSummary) {
     setCart({})
     setNotice(`Order ${order.orderNumber} placed successfully.`)
-    return order.orderNumber
   }
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
@@ -211,12 +264,12 @@ function App() {
     navigate('/collections/all-gear')
   }
 
-  const pageActions = { products: catalog, favorites, onAddToCart: addToCart, onToggleFavorite: toggleFavorite }
+  const pageActions = { products: catalog, favorites, content, onAddToCart: addToCart, onToggleFavorite: toggleFavorite }
 
   return (
     <div className="min-h-screen bg-[#f5f6f2] text-[#15201c]">
       {!isAdminRoute && <SiteHeader
-        departments={departments}
+        departments={activeDepartments}
         search={search}
         onSearchChange={setSearch}
         onSearchSubmit={handleSearch}
@@ -224,6 +277,7 @@ function App() {
         cartCount={cartCount}
         menuOpen={menuOpen}
         onToggleMenu={() => setMenuOpen((open) => !open)}
+        announcement={content.announcement}
       />}
       <Routes>
         <Route
@@ -233,6 +287,8 @@ function App() {
               favorites={favorites}
               products={visibleProducts}
               search={search}
+              content={content}
+              departments={activeDepartments}
               onAddToCart={addToCart}
               onClearFilters={clearFilters}
               onSelectCollection={selectCategory}
@@ -260,16 +316,21 @@ function App() {
             <CartPage
               products={catalog.filter((product) => cart[product.slug])}
               quantities={cart}
+              onUpdateQuantity={updateQuantity}
               onRemove={removeFromCart}
               customer={customer}
-              onCheckout={placeOrder}
+              settings={settings}
+              checkoutNote={content.checkout_note}
+              paymentNote={content.payment_note}
+              confirmationNote={content.order_confirmation_note}
+              onOrderPlaced={handleOrderPlaced}
             />
           }
         />
         <Route path="/account" element={<AccountPage customer={customer} onAuthenticated={handleAuthenticated} onLogout={handleLogout} />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
-      {!isAdminRoute && <SiteFooter />}
+      {!isAdminRoute && <SiteFooter tagline={content.footer_tagline} />}
       {!isAdminRoute && <ToastNotice message={notice} onDismiss={() => setNotice('')} />}
     </div>
   )

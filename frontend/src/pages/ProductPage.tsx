@@ -2,21 +2,36 @@ import { useState } from 'react'
 import { ArrowLeft, ArrowUpRight, Heart, Minus, PackageCheck, Plus, ShoppingBag, Truck } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import ProductCard from '../components/ProductCard'
-import { categorySlug, type Product } from '../catalog'
+import { blankProductContent, categorySlug, PLACEHOLDER_IMAGE, type Product } from '../catalog'
 
 interface ProductPageProps {
   product: Product
   relatedProducts: Product[]
   favorites: string[]
   isFavorite: boolean
+  deliveryNote?: string
+  paymentNote?: string
   onAddToCart: (product: Product, quantity?: number) => void
   onToggleFavorite: (productName: string) => void
 }
 
-function ProductPage({ product, relatedProducts, favorites, isFavorite, onAddToCart, onToggleFavorite }: ProductPageProps) {
-  const stock = product.stockQuantity ?? 0
+function ProductPage({
+  product,
+  relatedProducts,
+  favorites,
+  isFavorite,
+  deliveryNote = 'Nationwide delivery',
+  paymentNote = 'Cash on delivery available',
+  onAddToCart,
+  onToggleFavorite,
+}: ProductPageProps) {
+  const trackStock = product.trackStock ?? true
+  const stock = trackStock ? (product.stockQuantity ?? 0) : 99
   const [quantity, setQuantity] = useState(1)
-  const inStock = stock > 0
+  const inStock = !trackStock || stock > 0
+  const content = product.content ?? blankProductContent
+  const gallery = [product.image, ...content.gallery].filter((url, index, all) => url && all.indexOf(url) === index)
+  const [activeImage, setActiveImage] = useState(0)
   const specifications = product.specifications.map((specification, index) => {
     const separator = specification.indexOf(':')
     return {
@@ -34,18 +49,42 @@ function ProductPage({ product, relatedProducts, favorites, isFavorite, onAddToC
       </nav>
 
       <section className="grid gap-7 lg:grid-cols-[minmax(0,1.05fr)_minmax(400px,.95fr)] lg:gap-12">
-        <div className="relative grid min-h-[360px] place-items-center overflow-hidden border border-[#e7eae4] bg-white p-5 sm:min-h-[520px] sm:p-10">
-          <img src={product.image} alt={product.imageAlt} className="max-h-[480px] w-full object-contain" />
-          {product.badge && <span className="absolute left-4 top-4 bg-[#c7f464] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.1em]">{product.badge}</span>}
-          <button type="button" onClick={() => onToggleFavorite(product.slug)} aria-pressed={isFavorite} aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'} className="absolute right-4 top-4 grid size-10 place-items-center rounded-full border border-[#e7eae4] bg-white text-[#142c24] hover:text-[#e04f48]">
-            <Heart size={18} fill={isFavorite ? 'currentColor' : 'none'} />
-          </button>
+        <div>
+          <div className="relative grid min-h-[360px] place-items-center overflow-hidden border border-[#e7eae4] bg-white p-5 sm:min-h-[520px] sm:p-10">
+            <img
+              src={gallery[activeImage] || PLACEHOLDER_IMAGE}
+              alt={product.imageAlt || product.name}
+              onError={(event) => { event.currentTarget.src = PLACEHOLDER_IMAGE }}
+              className="max-h-[480px] w-full object-contain"
+            />
+            {product.badge && <span className="absolute left-4 top-4 bg-[#c7f464] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.1em]">{product.badge}</span>}
+            <button type="button" onClick={() => onToggleFavorite(product.slug)} aria-pressed={isFavorite} aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'} className="absolute right-4 top-4 grid size-10 place-items-center rounded-full border border-[#e7eae4] bg-white text-[#142c24] hover:text-[#e04f48]">
+              <Heart size={18} fill={isFavorite ? 'currentColor' : 'none'} />
+            </button>
+          </div>
+          {gallery.length > 1 && (
+            <div className="mt-3 grid grid-cols-5 gap-3" role="tablist" aria-label="Product images">
+              {gallery.slice(0, 5).map((url, index) => (
+                <button
+                  key={`${url}-${index}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeImage === index}
+                  onClick={() => setActiveImage(index)}
+                  className={`aspect-square overflow-hidden border bg-white ${activeImage === index ? 'border-[#315ee8]' : 'border-[#e7eae4]'}`}
+                >
+                  <img src={url} alt="" onError={(event) => { event.currentTarget.src = PLACEHOLDER_IMAGE }} className="size-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col py-1">
-          <p className="section-kicker">{product.category} <span className="px-1 text-[#a5ada6]">/</span> {product.brand}</p>
+          <p className="section-kicker">{content.eyebrow || `${product.category} `}<span className="px-1 text-[#a5ada6]">/</span> {product.brand}</p>
           <h1 className="mt-2 font-display text-3xl font-bold leading-tight tracking-[-0.045em] sm:text-[2.55rem]">{product.name}</h1>
-          <p className="mt-3 text-base font-semibold leading-7 text-[#455149]">{product.detail}</p>
+          <p className="mt-3 text-base font-semibold leading-7 text-[#455149]">{content.subtitle || product.detail}</p>
+          {content.size && <p className="mt-2 text-xs font-semibold uppercase tracking-widest text-[#68736c]">{content.size}</p>}
 
           {specifications.length > 0 && <section className="mt-6" aria-labelledby="key-specifications-title">
             <h2 id="key-specifications-title" className="font-display text-lg font-bold">Key specifications</h2>
@@ -58,7 +97,12 @@ function ProductPage({ product, relatedProducts, favorites, isFavorite, onAddToC
           </section>}
 
           <div className="mt-6 border-y border-[#e2e6df] py-5">
-            <p className="font-display text-3xl font-bold tracking-[-0.04em]">{product.price}</p>
+            <p className="flex flex-wrap items-baseline gap-x-3 font-display text-3xl font-bold tracking-[-0.04em]">
+              {product.price}
+              {product.compareAtPrice != null && product.compareAtPrice > product.priceValue && (
+                <s className="font-sans text-base font-semibold text-[#9aa29b]">{product.compareAt}</s>
+              )}
+            </p>
             <p className="mt-2 text-xs text-[#68736c]">Price in Pakistani Rupees. Availability and price are confirmed at checkout.</p>
           </div>
 
@@ -67,8 +111,8 @@ function ProductPage({ product, relatedProducts, favorites, isFavorite, onAddToC
               <span className={`size-2 rounded-full ${inStock ? 'bg-[#4c9a62]' : 'bg-[#c74c4c]'}`} />
               {inStock ? 'In stock' : 'Out of stock'}
             </span>
-            {inStock && <span className="text-[#68736c]">{stock} available</span>}
-            <span className="inline-flex items-center gap-1.5 text-[#68736c]"><Truck size={15} /> Nationwide delivery</span>
+            {inStock && trackStock && <span className="text-[#68736c]">{stock} available</span>}
+            <span className="inline-flex items-center gap-1.5 text-[#68736c]"><Truck size={15} /> {deliveryNote}</span>
           </div>
 
           <div className="mt-7 flex flex-wrap gap-3">
@@ -84,9 +128,19 @@ function ProductPage({ product, relatedProducts, favorites, isFavorite, onAddToC
 
           <div className="mt-7 grid gap-3 border-y border-[#e2e6df] py-4 text-xs text-[#566159] sm:grid-cols-2">
             <p className="flex items-center gap-2"><PackageCheck size={16} className="text-[#315ee8]" /> Secure checkout</p>
-            <p className="flex items-center gap-2"><Truck size={16} className="text-[#315ee8]" /> Cash on delivery available</p>
+            <p className="flex items-center gap-2"><Truck size={16} className="text-[#315ee8]" /> {paymentNote}</p>
           </div>
 
+          {content.notes.length > 0 && (
+            <dl className="mt-5 space-y-2.5 border border-[#dfe4dc] bg-white p-4 text-sm">
+              {content.notes.map((note, index) => (
+                <div key={`${note.label}-${index}`} className="flex gap-3">
+                  <dt className="w-28 shrink-0 font-semibold text-[#455149]">{note.label}</dt>
+                  <dd className="leading-6 text-[#68736c]">{note.value}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
         </div>
       </section>
 
@@ -94,6 +148,7 @@ function ProductPage({ product, relatedProducts, favorites, isFavorite, onAddToC
         <div>
           <p className="section-kicker">Product information</p>
           <h2 className="font-display text-2xl font-bold tracking-[-0.04em]">Overview</h2>
+          {content.intro && <p className="mt-4 border-l-2 border-[#c7f464] pl-4 text-sm font-semibold leading-7 text-[#15201c]">{content.intro}</p>}
           <p className="mt-4 text-sm leading-7 text-[#455149]">{product.description}</p>
           <p className="mt-4 text-xs leading-6 text-[#68736c]">{product.name} by {product.brand}, in {product.category}. Product details shown here are provided by the store.</p>
         </div>

@@ -6,6 +6,9 @@ interface FeaturedProductsProps {
   favorites: string[]
   products: Product[]
   search: string
+  kicker?: string
+  title?: string
+  subtitle?: string
   onAddToCart: (product: Product) => void
   onClearFilters: () => void
   onToggleFavorite: (productName: string) => void
@@ -15,6 +18,9 @@ function FeaturedProducts({
   favorites,
   products,
   search,
+  kicker = 'The good stuff',
+  title = 'Worth a closer look.',
+  subtitle = 'Hand-picked tech for work, play, and everything between.',
   onAddToCart,
   onClearFilters,
   onToggleFavorite,
@@ -31,9 +37,9 @@ function FeaturedProducts({
       <div className="mx-auto max-w-[1440px] px-4 sm:px-7 lg:px-10">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="section-kicker">The good stuff</p>
-            <h2 id="products-title" className="section-heading">Worth a closer look.</h2>
-            <p className="mt-2 text-sm text-[#68736c]">Hand-picked tech for work, play, and everything between.</p>
+            <p className="section-kicker">{kicker}</p>
+            <h2 id="products-title" className="section-heading">{title}</h2>
+            <p className="mt-2 text-sm text-[#68736c]">{subtitle}</p>
           </div>
           <p className="text-xs font-semibold text-[#68736c]">{products.length} products</p>
         </div>

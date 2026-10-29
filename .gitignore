@@ -5,6 +5,9 @@ dist-ssr
 .env
 backend/.venv/
 backend/instance/
+backend/uploads/
+*.db
+*.db-journal
 __pycache__/
 *.py[cod]
 
@@ -14,3 +17,6 @@ __pycache__/
 .idea
 .DS_Store
 Thumbs.db
+
+# Vite cache
+.vite/

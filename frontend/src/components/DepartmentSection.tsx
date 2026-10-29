@@ -3,16 +3,24 @@ import type { Department } from '../catalog'
 
 interface DepartmentSectionProps {
   departments: Department[]
+  kicker?: string
+  title?: string
   onSelectCategory: (category: string) => void
 }
 
-function DepartmentSection({ departments, onSelectCategory }: DepartmentSectionProps) {
+function DepartmentSection({
+  departments,
+  kicker = 'Find your frequency',
+  title = 'Shop by department',
+  onSelectCategory,
+}: DepartmentSectionProps) {
+  if (!departments.length) return null
   return (
     <section className="mx-auto max-w-[1440px] px-4 pb-12 sm:px-7 lg:px-10 lg:pb-16" aria-labelledby="departments-title">
       <div className="mb-5 flex items-end justify-between gap-4">
         <div>
-          <p className="section-kicker">Find your frequency</p>
-          <h2 id="departments-title" className="section-heading">Shop by department</h2>
+          <p className="section-kicker">{kicker}</p>
+          <h2 id="departments-title" className="section-heading">{title}</h2>
         </div>
         <a href="#products" className="hidden items-center gap-2 pb-1 text-sm font-semibold text-[#315ee8] sm:inline-flex">
           Browse everything <ArrowRight size={15} />
