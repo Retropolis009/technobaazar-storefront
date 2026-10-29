@@ -9,6 +9,7 @@ import HomePage from './pages/HomePage'
 import NotFoundPage from './pages/NotFoundPage'
 import ProductPage from './pages/ProductPage'
 import AdminPage from './pages/AdminPage'
+import SeoHead from './components/SeoHead'
 import SiteFooter from './components/SiteFooter'
 import SiteHeader from './components/SiteHeader'
 import ToastNotice from './components/ToastNotice'
@@ -280,10 +281,77 @@ function App() {
     navigate('/collections/all-gear')
   }
 
+  const pageSeo = useMemo(() => {
+    const siteTitle = content.seo_site_title
+    const siteDescription = content.seo_site_description
+    const base = content.seo_canonical_base.trim().replace(/\/$/, '')
+    const canonicalFor = (path: string) => (base ? `${base}${path}` : '')
+    const fallback = (value: string | undefined, next: string) => (value ?? '').trim() || next
+    const path = location.pathname
+
+    const productMatch = path.match(/^\/products\/([^/]+)$/)
+    if (productMatch) {
+      const product = catalog.find(item => item.slug === decodeURIComponent(productMatch[1]))
+      if (product) {
+        const title = fallback(product.seo?.title, `${product.name} Price in Pakistan | TechnoBaazar`)
+        const description = fallback(product.seo?.description, `${product.name} \u2014 ${product.detail || product.category}. ${siteDescription}`)
+        return {
+          title, description,
+          keywords: fallback(product.seo?.keywords, content.seo_site_keywords),
+          ogTitle: fallback(product.seo?.ogTitle, title),
+          ogDescription: fallback(product.seo?.ogDescription, description),
+          ogImage: fallback(product.seo?.ogImage, product.image || content.seo_og_image),
+          ogType: 'product', canonical: fallback(product.seo?.canonicalUrl, canonicalFor(path)), noIndex: false,
+        }
+      }
+    }
+
+    const collectionMatch = path.match(/^\/collections\/([^/]+)$/)
+    if (collectionMatch) {
+      const names = storeCategories.length ? ['All gear', ...storeCategories.map(item => item.name)] : undefined
+      const category = categoryFromSlug(decodeURIComponent(collectionMatch[1]), names)
+      if (category) {
+        const isAll = category === 'All gear'
+        const title = isAll ? siteTitle : `${category} Price in Pakistan | TechnoBaazar`
+        const description = isAll ? siteDescription : `Shop ${category} online in Pakistan at the best prices. ${siteDescription}`
+        return {
+          title, description, keywords: content.seo_site_keywords, ogTitle: title,
+          ogDescription: description, ogImage: content.seo_og_image, ogType: 'website',
+          canonical: canonicalFor(path), noIndex: false,
+        }
+      }
+    }
+
+    if (path === '/') {
+      return {
+        title: siteTitle, description: siteDescription, keywords: content.seo_site_keywords,
+        ogTitle: siteTitle, ogDescription: siteDescription, ogImage: content.seo_og_image,
+        ogType: 'website', canonical: canonicalFor('/'), noIndex: false,
+      }
+    }
+
+    const staticTitles: Record<string, string> = { '/about': 'About', '/favorites': 'Favorites', '/cart': 'Cart', '/account': 'Account' }
+    if (staticTitles[path]) {
+      const title = `${staticTitles[path]} | TechnoBaazar`
+      return {
+        title, description: siteDescription, keywords: content.seo_site_keywords, ogTitle: title,
+        ogDescription: siteDescription, ogImage: content.seo_og_image, ogType: 'website',
+        canonical: canonicalFor(path), noIndex: false,
+      }
+    }
+
+    return {
+      title: path.startsWith('/admin') ? 'Admin | TechnoBaazar' : 'Not found | TechnoBaazar',
+      description: siteDescription, keywords: '', ogTitle: '', ogDescription: '', ogImage: '',
+      ogType: 'website', canonical: '', noIndex: true,
+    }
+  }, [location.pathname, catalog, content, storeCategories])
+
   const pageActions = { products: catalog, favorites, content, categories: storeCategories, onAddToCart: addToCart, onToggleFavorite: toggleFavorite }
 
   return (
     <div className="min-h-screen bg-[#f5f6f2] text-[#15201c]">
+      <SeoHead {...pageSeo} />
       {!isAdminRoute && <SiteHeader
         departments={activeDepartments}
         search={search}

@@ -31,6 +31,16 @@ export interface ProductContent {
   notes: ProductNote[]
 }
 
+export interface ProductSeo {
+  title: string
+  description: string
+  keywords: string
+  ogTitle: string
+  ogDescription: string
+  ogImage: string
+  canonicalUrl: string
+}
+
 export interface Product {
   slug: string
   name: string
@@ -50,6 +60,7 @@ export interface Product {
   stockQuantity?: number
   active?: boolean
   content?: ProductContent
+  seo?: ProductSeo
 }
 
 export const blankProductContent: ProductContent = {
@@ -59,6 +70,16 @@ export const blankProductContent: ProductContent = {
   gallery: [],
   intro: '',
   notes: [],
+}
+
+export const blankProductSeo: ProductSeo = {
+  title: '',
+  description: '',
+  keywords: '',
+  ogTitle: '',
+  ogDescription: '',
+  ogImage: '',
+  canonicalUrl: '',
 }
 
 /** Neutral inline placeholder used when a product has no image yet. */

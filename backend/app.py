@@ -85,8 +85,13 @@ SITE_CONTENT_DEFAULTS = {
     'footer_tagline': 'Good gear for whatever you\u2019re building.',
     'footer_admin_text': 'Admin',
     'footer_home_text': 'Back to home',
+    'seo_site_title': 'TechnoBaazar \u2014 Computer Store in Pakistan',
+    'seo_site_description': 'Shop graphics cards, processors, laptops, and gaming gear online in Pakistan with nationwide delivery and local warranty.',
+    'seo_site_keywords': 'computer store pakistan, gaming pc, graphics cards, laptops, processors, technobaazar',
+    'seo_og_image': 'https://images.unsplash.com/photo-1593305841991-05c297ba4575?auto=format&fit=crop&w=1200&q=80',
+    'seo_canonical_base': '',
 }
-SITE_CONTENT_URL_FIELDS = {'hero_cta_url', 'hero_image'}
+SITE_CONTENT_URL_FIELDS = {'hero_cta_url', 'hero_image', 'seo_og_image'}
 SITE_CONTENT_STRUCTURED_FIELDS = {'benefits'}
 SITE_CONTENT_LIMITS = {key: 500 for key in SITE_CONTENT_DEFAULTS}
 SITE_CONTENT_LIMITS.update({'hero_subtitle': 500, 'featured_subtitle': 500, 'benefits': 4000,
@@ -96,7 +101,10 @@ SITE_CONTENT_LIMITS.update({'hero_subtitle': 500, 'featured_subtitle': 500, 'ben
                              'header_brand_prefix': 40, 'header_brand_accent': 40, 'header_tagline': 60,
                              'header_search_placeholder': 120, 'header_mobile_search_placeholder': 120,
                              'header_about_text': 60, 'footer_brand_text': 60,
-                             'footer_admin_text': 40, 'footer_home_text': 60})
+                             'footer_admin_text': 40, 'footer_home_text': 60,
+                             'seo_site_title': 200, 'seo_site_description': 500,
+                             'seo_site_keywords': 500, 'seo_og_image': 2000,
+                             'seo_canonical_base': 500})
 
 DELIVERY_CITIES_SEED = [
     ('karachi', 'Karachi', 350), ('lahore', 'Lahore', 350), ('islamabad', 'Islamabad', 350),
@@ -200,6 +208,13 @@ class Product(db.Model):
     badge = db.Column(db.String(100), nullable=False, default='')
     image = db.Column(db.Text, nullable=False, default='')
     image_alt = db.Column(db.String(300), nullable=False, default='')
+    seo_title = db.Column(db.String(200), nullable=False, default='')
+    seo_description = db.Column(db.String(500), nullable=False, default='')
+    seo_keywords = db.Column(db.String(500), nullable=False, default='')
+    og_title = db.Column(db.String(200), nullable=False, default='')
+    og_description = db.Column(db.String(500), nullable=False, default='')
+    og_image = db.Column(db.Text, nullable=False, default='')
+    canonical_url = db.Column(db.String(1000), nullable=False, default='')
     stock_quantity = db.Column(db.Integer, nullable=False, default=0, server_default='0')
     active = db.Column(db.Boolean, nullable=False, default=True, server_default=db.true())
 
@@ -214,6 +229,10 @@ class Product(db.Model):
             'trackStock': self.track_stock,
             'badge': self.badge, 'image': self.image, 'imageAlt': self.image_alt,
             'stockQuantity': self.stock_quantity, 'active': self.active,
+            'seo': {'title': self.seo_title or '', 'description': self.seo_description or '',
+                    'keywords': self.seo_keywords or '', 'ogTitle': self.og_title or '',
+                    'ogDescription': self.og_description or '', 'ogImage': self.og_image or '',
+                    'canonicalUrl': self.canonical_url or ''},
             'content': (content or {}).as_dict() if content is not None and not isinstance(content, dict) else (content or ProductContent.blank()),
         }
 
@@ -1308,16 +1327,27 @@ def create_app():
             'description': valid_text(data, 'description', 5000),
             'badge': valid_text(data, 'badge', 100),
             'imageAlt': valid_text(data, 'imageAlt', 300),
+            'seoTitle': valid_text(data, 'seoTitle', 200),
+            'seoDescription': valid_text(data, 'seoDescription', 500),
+            'seoKeywords': valid_text(data, 'seoKeywords', 500),
+            'ogTitle': valid_text(data, 'ogTitle', 200),
+            'ogDescription': valid_text(data, 'ogDescription', 500),
+            'ogImage': valid_text(data, 'ogImage', 2000),
+            'canonicalUrl': valid_text(data, 'canonicalUrl', 1000),
         }
         parsed_image = urlparse(image) if isinstance(image, str) else None
         track_stock = data.get('trackStock', True)
-        if any(value is False or not value for value in strings.values()) or not re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*', strings['slug']) or not price or price > 1_000_000_000_000 or stock is None or stock > 1_000_000 or not isinstance(specs, list) or len(specs) > 100 or any(not isinstance(spec, str) or len(spec) > 300 for spec in specs) or not isinstance(image, str) or len(image) > 2000 or (image and not is_local_or_http_url(image)) or any(value is False for value in optional.values()) or not isinstance(track_stock, bool):
+        if any(value is False or not value for value in strings.values()) or not re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*', strings['slug']) or not price or price > 1_000_000_000_000 or stock is None or stock > 1_000_000 or not isinstance(specs, list) or len(specs) > 100 or any(not isinstance(spec, str) or len(spec) > 300 for spec in specs) or not isinstance(image, str) or len(image) > 2000 or (image and not is_local_or_http_url(image)) or any(value is False for value in optional.values()) or (optional['ogImage'] and not is_local_or_http_url(optional['ogImage'])) or not isinstance(track_stock, bool):
             return jsonify({'error': 'Product fields have invalid values.'}), 400
         product = Product(
             slug=strings['slug'], name=strings['name'], category=strings['category'], brand=strings['brand'],
             detail=optional['detail'] or '', description=optional['description'] or '',
             specifications=specs, price_value=price, compare_at_price=compare_at, track_stock=track_stock,
             badge=optional['badge'] or '', image=image, image_alt=optional['imageAlt'] or '',
+            seo_title=optional['seoTitle'] or '', seo_description=optional['seoDescription'] or '',
+            seo_keywords=optional['seoKeywords'] or '', og_title=optional['ogTitle'] or '',
+            og_description=optional['ogDescription'] or '', og_image=optional['ogImage'] or '',
+            canonical_url=optional['canonicalUrl'] or '',
             stock_quantity=stock, active=data.get('active', True),
         )
         if not isinstance(product.active, bool):
@@ -1349,7 +1379,11 @@ def create_app():
                   'description': 'description', 'specifications': 'specifications', 'priceValue': 'price_value',
                   'compareAtPrice': 'compare_at_price', 'trackStock': 'track_stock',
                   'badge': 'badge', 'image': 'image', 'imageAlt': 'image_alt',
-                  'stockQuantity': 'stock_quantity', 'active': 'active'}
+                  'stockQuantity': 'stock_quantity', 'active': 'active',
+                  'seoTitle': 'seo_title', 'seoDescription': 'seo_description',
+                  'seoKeywords': 'seo_keywords', 'ogTitle': 'og_title',
+                  'ogDescription': 'og_description', 'ogImage': 'og_image',
+                  'canonicalUrl': 'canonical_url'}
         for incoming, attribute in fields.items():
             if incoming in data:
                 value = data[incoming]
@@ -1371,15 +1405,15 @@ def create_app():
                 elif incoming in {'active', 'trackStock'}:
                     if not isinstance(value, bool):
                         return jsonify({'error': f'{incoming} must be a boolean.'}), 400
-                elif incoming == 'image':
+                elif incoming in {'image', 'ogImage'}:
                     if not isinstance(value, str) or len(value) > 2000 or (value and not is_local_or_http_url(value)):
-                        return jsonify({'error': 'image must be a relative path or an HTTP(S) URL.'}), 400
+                        return jsonify({'error': f'{incoming} must be a relative path or an HTTP(S) URL.'}), 400
                 elif incoming == 'category':
                     value = valid_text({incoming: value}, incoming, 100, required=True)
                     if value is False or (value not in PRODUCT_CATEGORIES and not Category.query.filter_by(name=value).first()):
                         return jsonify({'error': 'Choose one of the existing product categories.'}), 400
                 else:
-                    maximum = {'name': 240, 'brand': 120, 'detail': 300, 'description': 5000, 'badge': 100, 'imageAlt': 300}[incoming]
+                    maximum = {'name': 240, 'brand': 120, 'detail': 300, 'description': 5000, 'badge': 100, 'imageAlt': 300, 'seoTitle': 200, 'seoDescription': 500, 'seoKeywords': 500, 'ogTitle': 200, 'ogDescription': 500, 'canonicalUrl': 1000}[incoming]
                     value = valid_text({incoming: value}, incoming, maximum, required=incoming in {'name', 'brand'})
                     if value is False:
                         return jsonify({'error': f'{incoming} is too long or invalid.'}), 400
@@ -1925,11 +1959,17 @@ def create_app():
         with seed_file.open(encoding='utf-8') as file:
             rows = json.load(file)
         for data in rows:
+            seo = data.get('seo') if isinstance(data.get('seo'), dict) else {}
             db.session.add(Product(
                 slug=data['slug'], name=data['name'], category=data['category'], brand=data['brand'],
                 detail=data['detail'], description=data['description'], specifications=data['specifications'],
-                price_value=data['priceValue'], badge=data['badge'], image=data['image'], image_alt=data['imageAlt'],
+                price_value=data['priceValue'], compare_at_price=data.get('compareAtPrice'),
+                badge=data['badge'], image=data['image'], image_alt=data['imageAlt'],
                 stock_quantity=data.get('stockQuantity', 10),
+                seo_title=seo.get('title', ''), seo_description=seo.get('description', ''),
+                seo_keywords=seo.get('keywords', ''), og_title=seo.get('ogTitle', ''),
+                og_description=seo.get('ogDescription', ''), og_image=seo.get('ogImage', ''),
+                canonical_url=seo.get('canonicalUrl', ''),
             ))
         db.session.add(CatalogState(id=1, initialized=True))
         db.session.commit()
