@@ -36,6 +36,11 @@ export interface LandingContent {
   footer_tagline: string
   footer_admin_text: string
   footer_home_text: string
+  seo_site_title: string
+  seo_site_description: string
+  seo_site_keywords: string
+  seo_og_image: string
+  seo_canonical_base: string
 }
 
 export const DEFAULT_LANDING_CONTENT: LandingContent = {
@@ -77,6 +82,11 @@ export const DEFAULT_LANDING_CONTENT: LandingContent = {
   footer_tagline: 'Good gear for whatever you\u2019re building.',
   footer_admin_text: 'Admin',
   footer_home_text: 'Back to home',
+  seo_site_title: 'TechnoBaazar — Computer Store in Pakistan',
+  seo_site_description: 'Shop graphics cards, processors, laptops, and gaming gear online in Pakistan with nationwide delivery and local warranty.',
+  seo_site_keywords: 'computer store pakistan, gaming pc, graphics cards, laptops, processors, technobaazar',
+  seo_og_image: 'https://images.unsplash.com/photo-1593305841991-05c297ba4575?auto=format&fit=crop&w=1200&q=80',
+  seo_canonical_base: '',
 }
 
 function parseBenefits(raw: unknown): Benefit[] {

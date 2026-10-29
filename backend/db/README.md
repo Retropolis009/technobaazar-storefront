@@ -11,6 +11,7 @@ revisions in `backend/migrations/versions/`, written as plain Postgres-first
 | `002_customers_orders.sql` | `customer`, `cart_item`, `favorite`, `order`, `order_item`, stock columns |
 | `003_store_cms.sql` | `category`, `product_content`, guest carts, `coupon`, `store_setting`, `delivery_city`, richer `order`, `order_stock_movement`, `site_content`, `site_content_revision` |
 | `004_category_custom_fields.sql` | `category_custom_field` (per-category specification shortcuts) |
+| `005_product_seo_fields.sql` | SEO columns on `product` (meta + Open Graph + canonical) |
 | `005_category_hierarchy.sql` | Parent/child category relationships; migrates used categories under their parent |
 
 All files are idempotent (`IF NOT EXISTS`) and safe to rerun.

@@ -11,10 +11,12 @@ type Draft = {
   slug: string; name: string; category: string; brand: string; price: string; compareAtPrice: string; badge: string
   detail: string; description: string; image: string; imageAlt: string; stockQuantity: string
   active: boolean; trackStock: boolean; specifications: Array<{ label: string; value: string }>
+  seoTitle: string; seoDescription: string; seoKeywords: string; ogTitle: string; ogDescription: string; ogImage: string; canonicalUrl: string
 }
 const emptyDraft: Draft = {
   slug: '', name: '', category: 'Graphics Cards', brand: '', price: '', compareAtPrice: '', badge: '', detail: '',
   description: '', image: '', imageAlt: '', stockQuantity: '0', active: true, trackStock: true, specifications: [{ label: '', value: '' }],
+  seoTitle: '', seoDescription: '', seoKeywords: '', ogTitle: '', ogDescription: '', ogImage: '', canonicalUrl: '',
 }
 const orderStatuses = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled']
 const paymentStatuses = ['unpaid', 'pending', 'paid', 'due_on_delivery', 'refunded']
@@ -95,6 +97,9 @@ function AdminPage({ products, onProductsChange }: Props) {
       badge: product.badge, detail: product.detail,
       description: product.description, image: product.image, imageAlt: product.imageAlt,
       stockQuantity: String(product.stockQuantity ?? 0), active: product.active ?? true, trackStock: product.trackStock ?? true,
+      seoTitle: product.seo?.title ?? '', seoDescription: product.seo?.description ?? '', seoKeywords: product.seo?.keywords ?? '',
+      ogTitle: product.seo?.ogTitle ?? '', ogDescription: product.seo?.ogDescription ?? '', ogImage: product.seo?.ogImage ?? '',
+      canonicalUrl: product.seo?.canonicalUrl ?? '',
       specifications: product.specifications.length ? product.specifications.map(specification => {
         const separator = specification.indexOf(':')
         return separator > 0
@@ -137,7 +142,12 @@ function AdminPage({ products, onProductsChange }: Props) {
     }
     setSaving(true)
     try {
-      const saved = await adminFetch<Product>(editing ? `/api/admin/products/${editing.slug}` : '/api/admin/products', { method: editing ? 'PUT' : 'POST', body: JSON.stringify(product) })
+      const saved = await adminFetch<Product>(editing ? `/api/admin/products/${editing.slug}` : '/api/admin/products', { method: editing ? 'PUT' : 'POST', body: JSON.stringify({
+        ...product,
+        seoTitle: draft.seoTitle.trim(), seoDescription: draft.seoDescription.trim(), seoKeywords: draft.seoKeywords.trim(),
+        ogTitle: draft.ogTitle.trim(), ogDescription: draft.ogDescription.trim(), ogImage: draft.ogImage.trim(),
+        canonicalUrl: draft.canonicalUrl.trim(),
+      }) })
       onProductsChange(editing ? products.map(item => item.slug === editing.slug ? saved : item) : [saved, ...products])
       setFormOpen(false); setError('')
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Product was not saved.') }
@@ -257,6 +267,18 @@ function AdminPage({ products, onProductsChange }: Props) {
               <div className="mt-5 grid gap-4">
                 <Field label="Image URL" hint="Paste a direct link or a /api/media/ URL from the media library."><input type="text" maxLength={2000} value={draft.image} onChange={event => setDraft({ ...draft, image: event.target.value })} placeholder="https://example.com/product-image.jpg" className={inputClass}/></Field>
                 <Field label="Image alternative text" hint="Describes the image; shown if it cannot load."><input maxLength={300} value={draft.imageAlt} onChange={event => setDraft({ ...draft, imageAlt: event.target.value })} placeholder={draft.name || 'Describe the product image'} className={inputClass}/></Field>
+              </div>
+            </section>
+            <section className="border border-[#dfe4dc] bg-white p-5 sm:p-6">
+              <EditorSection number="06" title="Search & social (SEO)" note="How this product appears on Google, WhatsApp, and Facebook. Blank fields fall back to the name, detail, and image above." />
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                <div className="sm:col-span-2"><Field label="SEO title" hint="Aim for under 60 characters so Google shows it in full."><input maxLength={200} value={draft.seoTitle} onChange={event => setDraft({ ...draft, seoTitle: event.target.value })} placeholder={`${draft.name || 'Product name'} Price in Pakistan | TechnoBaazar`} className={inputClass}/><p className="mt-1 text-right text-xs font-normal text-[#68736c]">{draft.seoTitle.length}/200</p></Field></div>
+                <div className="sm:col-span-2"><label className="block text-sm font-semibold">Meta description<span className="mt-1 block text-xs font-normal leading-5 text-[#68736c]">The snippet under the title on Google. Aim for under 155 characters.</span><textarea maxLength={500} rows={3} value={draft.seoDescription} onChange={event => setDraft({ ...draft, seoDescription: event.target.value })} placeholder="Buy this product online in Pakistan at the best price, with nationwide delivery and warranty." className="mt-2 w-full resize-y border border-[#cfd6ce] p-3 text-sm font-normal leading-6 outline-none focus:border-[#315ee8]"/></label><p className="mt-1 text-right text-xs text-[#68736c]">{draft.seoDescription.length}/500</p></div>
+                <Field label="Keywords" hint="Comma-separated. A minor ranking factor, still used by some directories."><input maxLength={500} value={draft.seoKeywords} onChange={event => setDraft({ ...draft, seoKeywords: event.target.value })} placeholder="ryzen 5 7600, processor price in pakistan" className={inputClass}/></Field>
+                <Field label="Social (OG) title" hint="Blank reuses the SEO title when the link is shared."><input maxLength={200} value={draft.ogTitle} onChange={event => setDraft({ ...draft, ogTitle: event.target.value })} className={inputClass}/></Field>
+                <Field label="Social (OG) description" hint="Blank reuses the meta description."><input maxLength={500} value={draft.ogDescription} onChange={event => setDraft({ ...draft, ogDescription: event.target.value })} className={inputClass}/></Field>
+                <Field label="Social (OG) image URL" hint="Blank reuses the product image. 1200x630 works best."><input maxLength={2000} value={draft.ogImage} onChange={event => setDraft({ ...draft, ogImage: event.target.value })} placeholder="https://example.com/share-image.jpg" className={inputClass}/></Field>
+                <div className="sm:col-span-2"><Field label="Canonical URL" hint="Rarely needed. Only set this when the same product also lives under another URL."><input maxLength={1000} value={draft.canonicalUrl} onChange={event => setDraft({ ...draft, canonicalUrl: event.target.value })} placeholder="https://technobaazar.pk/products/example" className={inputClass}/></Field></div>
               </div>
             </section>
             {error && <p role="alert" className="border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</p>}
@@ -544,7 +566,7 @@ function OrderDetail({ orderNumber }: { orderNumber: string }) {
 }
 
 // ----------------------------------------------------------------- content ---
-const CONTENT_GROUPS: Array<{ title: string; note: string; fields: Array<{ key: string; label: string; multiline?: boolean; hint?: string }> }> = [
+const CONTENT_GROUPS: Array<{ title: string; note: string; preview?: 'search-snippet'; fields: Array<{ key: string; label: string; multiline?: boolean; hint?: string }> }> = [
   { title: 'Announcement bar', note: 'The strip above the header.', fields: [{ key: 'announcement', label: 'Announcement text', hint: 'One short line, e.g. a sale or delivery promise.' }] },
   {
     title: 'Hero', note: 'The big blue panel on the homepage.',
@@ -587,6 +609,16 @@ const CONTENT_GROUPS: Array<{ title: string; note: string; fields: Array<{ key: 
       { key: 'featured_kicker', label: 'Products kicker', hint: 'Small label above the products heading.' },
       { key: 'featured_title', label: 'Products title', hint: 'Main heading above the product grid.' },
       { key: 'featured_subtitle', label: 'Products subtitle', multiline: true, hint: 'Supporting line under the products heading.' },
+    ],
+  },
+  {
+    title: 'Search & social (SEO)', note: 'How the store appears on Google and when links are shared.', preview: 'search-snippet',
+    fields: [
+      { key: 'seo_site_title', label: 'Site title', hint: 'Browser tab and Google title for the homepage. Aim for under 60 characters.' },
+      { key: 'seo_site_description', label: 'Site description', multiline: true, hint: 'Google snippet for the homepage. Aim for under 155 characters.' },
+      { key: 'seo_site_keywords', label: 'Site keywords', hint: 'Comma-separated. A minor ranking factor, still used by some directories.' },
+      { key: 'seo_og_image', label: 'Social share image URL', hint: 'Shown when store links are shared on WhatsApp or Facebook. 1200x630 works best.' },
+      { key: 'seo_canonical_base', label: 'Canonical base URL', hint: 'Your live domain, e.g. https://technobaazar.pk. Used to build canonical links; blank disables them.' },
     ],
   },
   {
@@ -691,6 +723,7 @@ function ContentSection({ onError }: { onError: (message: string) => void }) {
             ? <label key={field.key} className="block text-sm font-semibold">{field.label}<textarea rows={2} value={values[field.key] ?? ''} onChange={event => setValues({ ...values, [field.key]: event.target.value })} className="mt-2 w-full resize-y border border-[#cfd6ce] p-3 text-sm font-normal leading-6 outline-none focus:border-[#315ee8]"/>{field.hint && <span className="mt-1 block text-xs font-normal leading-5 text-[#68736c]">{field.hint}</span>}</label>
             : <Field key={field.key} label={field.label} hint={field.hint}><input value={values[field.key] ?? ''} onChange={event => setValues({ ...values, [field.key]: event.target.value })} className={inputClass}/></Field>)}
         </div>
+        {group.preview === 'search-snippet' && <SearchSnippetPreview values={values} />}
       </section>)}
       <section className="border border-[#dfe4dc] bg-white p-5 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -730,6 +763,18 @@ function ContentSection({ onError }: { onError: (message: string) => void }) {
       {!history.length && <p className="mt-3 text-sm text-[#68736c]">No revisions yet.</p>}
       </div>
     </aside>
+  </div>
+}
+
+function SearchSnippetPreview({ values }: { values: Record<string, string> }) {
+  const title = (values.seo_site_title ?? '').trim() || DEFAULT_LANDING_CONTENT.seo_site_title
+  const description = (values.seo_site_description ?? '').trim() || DEFAULT_LANDING_CONTENT.seo_site_description
+  const base = (values.seo_canonical_base ?? '').trim().replace(/\/$/, '') || 'technobaazar.pk'
+  return <div className="mt-4 border border-[#dfe4dc] bg-[#fafbf9] p-4">
+    <p className="mb-2 text-xs font-bold uppercase tracking-wider text-[#68736c]">Google result preview</p>
+    <p className="truncate text-xs text-[#455149]">{base}</p>
+    <p className="mt-0.5 line-clamp-1 text-base text-[#1a0dab]">{title}</p>
+    <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-[#545454]">{description}</p>
   </div>
 }
 
