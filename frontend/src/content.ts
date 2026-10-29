@@ -41,6 +41,27 @@ export interface LandingContent {
   seo_site_keywords: string
   seo_og_image: string
   seo_canonical_base: string
+  seo_google_verification: string
+  seo_bing_verification: string
+  seo_ga_measurement_id: string
+  seo_gtm_id: string
+  seo_meta_pixel_id: string
+  seo_twitter_handle: string
+  seo_facebook_url: string
+  seo_instagram_url: string
+  seo_youtube_url: string
+  seo_org_name: string
+  seo_org_phone: string
+  seo_org_address: string
+  seo_robots_txt: string
+  seo_about_title: string
+  seo_about_description: string
+  seo_cart_title: string
+  seo_cart_description: string
+  seo_favorites_title: string
+  seo_favorites_description: string
+  seo_account_title: string
+  seo_account_description: string
 }
 
 export const DEFAULT_LANDING_CONTENT: LandingContent = {
@@ -87,6 +108,27 @@ export const DEFAULT_LANDING_CONTENT: LandingContent = {
   seo_site_keywords: 'computer store pakistan, gaming pc, graphics cards, laptops, processors, technobaazar',
   seo_og_image: 'https://images.unsplash.com/photo-1593305841991-05c297ba4575?auto=format&fit=crop&w=1200&q=80',
   seo_canonical_base: '',
+  seo_google_verification: '',
+  seo_bing_verification: '',
+  seo_ga_measurement_id: '',
+  seo_gtm_id: '',
+  seo_meta_pixel_id: '',
+  seo_twitter_handle: '',
+  seo_facebook_url: '',
+  seo_instagram_url: '',
+  seo_youtube_url: '',
+  seo_org_name: 'TechnoBaazar',
+  seo_org_phone: '',
+  seo_org_address: '',
+  seo_robots_txt: 'User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /cart\nDisallow: /account',
+  seo_about_title: '',
+  seo_about_description: '',
+  seo_cart_title: '',
+  seo_cart_description: '',
+  seo_favorites_title: '',
+  seo_favorites_description: '',
+  seo_account_title: '',
+  seo_account_description: '',
 }
 
 function parseBenefits(raw: unknown): Benefit[] {
