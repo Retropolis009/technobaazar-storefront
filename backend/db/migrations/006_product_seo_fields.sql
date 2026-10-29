@@ -1,4 +1,4 @@
--- 005: product-level SEO fields (mirrors Alembic e4f1a9c2b7d3).
+-- 006: product-level SEO fields (mirrors Alembic e4f1a9c2b7d3).
 -- Meta title/description/keywords plus Open Graph overrides and a canonical URL
 -- per product. Safe to rerun.
 

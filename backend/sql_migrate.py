@@ -30,8 +30,10 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
 
 def split_statements(sql):
     # Migration files contain plain DDL/DML only: no dollar-quoted bodies
-    # and no semicolons inside string literals.
-    return [chunk.strip() for chunk in sql.split(';') if chunk.strip()]
+    # and no semicolons inside string literals. Full-line `--` comments are
+    # stripped first because header notes may contain semicolons.
+    code_lines = [line for line in sql.splitlines() if not line.strip().startswith('--')]
+    return [chunk.strip() for chunk in '\n'.join(code_lines).split(';') if chunk.strip()]
 
 
 def main():

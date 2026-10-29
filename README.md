@@ -54,6 +54,26 @@ Notes:
   (Nutikals-style runtime ensures). In production, run migrations and set
   `AUTO_CREATE_TABLES=false`.
 
+## Local PostgreSQL
+
+SQLite works out of the box, but the recommended local database is
+PostgreSQL — same engine as production. No system install needed: the
+helper uses embedded Postgres binaries (data in `~/pgdata`, outside the repo).
+
+```sh
+cd backend
+pip install "pgserver==0.1.4"   # one time, inside your venv
+python local_postgres.py start  # prints DATABASE_URL
+```
+
+Copy the printed `DATABASE_URL` into `backend/.env`, then run the usual
+setup (`db upgrade`, `create-admin`, `seed-catalog`). Other commands:
+
+```sh
+python local_postgres.py status  # server + database health
+python local_postgres.py stop    # stop the server (data is kept)
+```
+
 ## Database migrations
 
 Two equivalent tracks, kept in the same order:
@@ -95,9 +115,14 @@ Open `/admin` and sign in through the Flask API:
   gallery, intro highlight, info notes).
 - **Orders** — search/filter, status + payment updates (cancelling restores
   stock), order details, and CSV export.
-- **Landing content** — edit the announcement bar, hero, section headings,
-  benefits, and checkout notes as a draft, then publish; revision history
-  with restore.
+- **Landing content** — edit the announcement bar, hero, header/footer text,
+  section headings, benefits, and checkout notes as a draft, then publish;
+  revision history with restore. A live preview shows the homepage as you type.
+- **SEO** — site title/description/keywords, canonical domain, social share
+  image, Google/Bing verification, GA4/Tag Manager/Meta Pixel IDs, business
+  info (JSON-LD), robots.txt, per-page titles, and per-product search settings
+  with an SEO-health checklist. Live Google-snippet and link previews.
+  Crawlers are served `/robots.txt` and an auto-generated `/sitemap.xml`.
 - **Settings** — delivery fees, free-delivery threshold, low-stock alert,
   delivery cities, coupons, category visibility, and the media library
   (uploaded images are served from `/api/media/...`).

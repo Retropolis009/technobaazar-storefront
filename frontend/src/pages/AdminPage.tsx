@@ -1,12 +1,12 @@
 import { Fragment, useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Boxes, ClipboardList, Download, Eye, ImagePlus, LayoutDashboard, LogOut, PackagePlus, PenLine, Plus, Search, Settings as SettingsIcon, ShieldCheck, Trash2, Truck, X } from 'lucide-react'
+import { Boxes, ClipboardList, Download, Eye, Globe, ImagePlus, LayoutDashboard, LogOut, PackagePlus, PenLine, Plus, Search, Settings as SettingsIcon, ShieldCheck, Trash2, Truck, X } from 'lucide-react'
 import { blankProductContent, type Product, type ProductContent } from '../catalog'
 import { DEFAULT_LANDING_CONTENT } from '../content'
 import { apiUrl, formatPKR, type AdminCoupon, type AdminSettings, type Category, type CategoryField, type ContentRevision, type DashboardStats, type MediaFile, type OrderSummary } from '../api'
 
 interface Props { products: Product[]; onProductsChange: (products: Product[]) => void }
-type Section = 'overview' | 'catalog' | 'orders' | 'content' | 'settings'
+type Section = 'overview' | 'catalog' | 'orders' | 'content' | 'seo' | 'settings'
 type Draft = {
   slug: string; name: string; category: string; brand: string; price: string; compareAtPrice: string; badge: string
   detail: string; description: string; image: string; imageAlt: string; stockQuantity: string
@@ -185,6 +185,7 @@ function AdminPage({ products, onProductsChange }: Props) {
     catalog: { title: 'Products', note: 'Manage products, prices, page content, and available stock.' },
     orders: { title: 'Orders', note: 'Confirm, ship, and track customer orders.' },
     content: { title: 'Landing content', note: 'Edit the homepage, then publish when it looks right.' },
+    seo: { title: 'SEO', note: 'Rank higher on Google: titles, previews, analytics, and per-product search settings.' },
     settings: { title: 'Store settings', note: 'Delivery fees, coupons, categories, and media.' },
   }
 
@@ -195,6 +196,7 @@ function AdminPage({ products, onProductsChange }: Props) {
         <NavButton active={section === 'catalog'} onClick={() => setSection('catalog')} icon={<Boxes size={17}/>} label="Products" />
         <NavButton active={section === 'orders'} onClick={() => setSection('orders')} icon={<ClipboardList size={17}/>} label="Orders" />
         <NavButton active={section === 'content'} onClick={() => setSection('content')} icon={<PenLine size={17}/>} label="Landing content" />
+        <NavButton active={section === 'seo'} onClick={() => setSection('seo')} icon={<Globe size={17}/>} label="SEO" />
         <NavButton active={section === 'settings'} onClick={() => setSection('settings')} icon={<SettingsIcon size={17}/>} label="Settings" />
       </nav>
       <button onClick={() => navigate('/')} className="mt-3 hidden px-3 py-3 text-left text-sm text-[#68736c] hover:text-[#315ee8] md:block">← Back to storefront</button>
@@ -212,6 +214,7 @@ function AdminPage({ products, onProductsChange }: Props) {
       />}
       {section === 'orders' && <OrdersSection onError={setError} />}
       {section === 'content' && <ContentSection onError={setError} />}
+      {section === 'seo' && <SeoSection products={products} onProductsChange={onProductsChange} onError={setError} />}
       {section === 'settings' && <SettingsSection onError={setError} onCategoriesChange={setAvailableCategories} />}
     </div></div>
     {formOpen && <div className="fixed inset-0 z-50 overflow-y-auto bg-[#15201c]/60 p-2 sm:p-5">
@@ -612,16 +615,6 @@ const CONTENT_GROUPS: Array<{ title: string; note: string; preview?: 'search-sni
     ],
   },
   {
-    title: 'Search & social (SEO)', note: 'How the store appears on Google and when links are shared.', preview: 'search-snippet',
-    fields: [
-      { key: 'seo_site_title', label: 'Site title', hint: 'Browser tab and Google title for the homepage. Aim for under 60 characters.' },
-      { key: 'seo_site_description', label: 'Site description', multiline: true, hint: 'Google snippet for the homepage. Aim for under 155 characters.' },
-      { key: 'seo_site_keywords', label: 'Site keywords', hint: 'Comma-separated. A minor ranking factor, still used by some directories.' },
-      { key: 'seo_og_image', label: 'Social share image URL', hint: 'Shown when store links are shared on WhatsApp or Facebook. 1200x630 works best.' },
-      { key: 'seo_canonical_base', label: 'Canonical base URL', hint: 'Your live domain, e.g. https://technobaazar.pk. Used to build canonical links; blank disables them.' },
-    ],
-  },
-  {
     title: 'Checkout & footer', note: 'Notes shown during checkout and in the footer.',
     fields: [
       { key: 'checkout_note', label: 'Checkout note', multiline: true, hint: 'Reminder shown on the checkout page.' },
@@ -815,6 +808,292 @@ function LandingPreview({ values, benefits }: { values: Record<string, string>; 
       <p className="mt-1 text-[9px] text-white/75">{text('footer_home_text')} \u00b7 {text('footer_admin_text')}</p>
     </div>
   </div>
+}
+
+const SEO_KEYS = [
+  'seo_site_title', 'seo_site_description', 'seo_site_keywords', 'seo_canonical_base',
+  'seo_og_image', 'seo_twitter_handle', 'seo_facebook_url', 'seo_instagram_url', 'seo_youtube_url',
+  'seo_google_verification', 'seo_bing_verification', 'seo_ga_measurement_id', 'seo_gtm_id', 'seo_meta_pixel_id',
+  'seo_org_name', 'seo_org_phone', 'seo_org_address', 'seo_robots_txt',
+  'seo_about_title', 'seo_about_description', 'seo_cart_title', 'seo_cart_description',
+  'seo_favorites_title', 'seo_favorites_description', 'seo_account_title', 'seo_account_description',
+]
+
+function SeoSection({ products, onProductsChange, onError }: { products: Product[]; onProductsChange: (products: Product[]) => void; onError: (message: string) => void }) {
+  const [values, setValues] = useState<Record<string, string>>({})
+  const [hasDraft, setHasDraft] = useState(false)
+  const [note, setNote] = useState('')
+  const [busy, setBusy] = useState('')
+  const set = (key: string, value: string) => setValues(current => ({ ...current, [key]: value }))
+
+  async function load() {
+    try {
+      const data = await adminFetch<Record<string, unknown>>('/api/admin/site-content')
+      const next: Record<string, string> = {}
+      for (const key of SEO_KEYS) next[key] = typeof data[key] === 'string' ? (data[key] as string) : ''
+      setValues(next)
+      setHasDraft(data._has_draft === true)
+      onError('')
+    } catch (cause) {
+      onError(cause instanceof Error ? cause.message : 'Could not load SEO settings.')
+    }
+  }
+
+  useEffect(() => { void load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function saveDraft() {
+    setBusy('draft')
+    try {
+      await adminFetch('/api/admin/site-content', { method: 'PUT', body: JSON.stringify({ values, note }) })
+      setNote('')
+      await load()
+    } catch (cause) {
+      onError(cause instanceof Error ? cause.message : 'Draft was not saved.')
+    } finally {
+      setBusy('')
+    }
+  }
+
+  async function publish() {
+    setBusy('publish')
+    try {
+      await adminFetch('/api/admin/site-content/publish', { method: 'POST' })
+      await load()
+    } catch (cause) {
+      onError(cause instanceof Error ? cause.message : 'SEO settings were not published.')
+    } finally {
+      setBusy('')
+    }
+  }
+
+  async function discard() {
+    if (!window.confirm('Discard the unpublished draft?')) return
+    setBusy('discard')
+    try {
+      await adminFetch('/api/admin/site-content/discard', { method: 'POST' })
+      await load()
+    } catch (cause) {
+      onError(cause instanceof Error ? cause.message : 'Draft was not discarded.')
+    } finally {
+      setBusy('')
+    }
+  }
+
+  return <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(300px,.6fr)]">
+    <div className="space-y-5">
+      {hasDraft && <p className="border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">You have unpublished changes. Publish to apply them to the live store.</p>}
+      <section className="border border-[#dfe4dc] bg-white p-5 sm:p-6">
+        <h2 className="font-display text-lg font-bold">General</h2>
+        <p className="mt-1 text-xs text-[#68736c]">The homepage title and description that Google shows.</p>
+        <div className="mt-4 grid gap-4">
+          <Field label="Site title" hint="Browser tab and Google title. Aim for under 60 characters."><input maxLength={200} value={values.seo_site_title ?? ''} onChange={event => set('seo_site_title', event.target.value)} placeholder="TechnoBaazar — Computer Store in Pakistan" className={inputClass}/><p className="mt-1 text-right text-xs font-normal text-[#68736c]">{(values.seo_site_title ?? '').length}/200</p></Field>
+          <label className="block text-sm font-semibold">Site description<span className="mt-1 block text-xs font-normal leading-5 text-[#68736c]">Google snippet for the homepage. Aim for under 155 characters.</span><textarea maxLength={500} rows={3} value={values.seo_site_description ?? ''} onChange={event => set('seo_site_description', event.target.value)} className="mt-2 w-full resize-y border border-[#cfd6ce] p-3 text-sm font-normal leading-6 outline-none focus:border-[#315ee8]"/></label>
+          <Field label="Site keywords" hint="Comma-separated. A minor ranking factor, still used by some directories."><input maxLength={500} value={values.seo_site_keywords ?? ''} onChange={event => set('seo_site_keywords', event.target.value)} className={inputClass}/></Field>
+          <Field label="Canonical base URL" hint="Your live domain, e.g. https://technobaazar.pk. Builds canonical links and the sitemap; blank disables them."><input maxLength={500} value={values.seo_canonical_base ?? ''} onChange={event => set('seo_canonical_base', event.target.value)} placeholder="https://technobaazar.pk" className={inputClass}/></Field>
+        </div>
+        <GoogleSnippetPreview base={values.seo_canonical_base ?? ''} title={values.seo_site_title ?? ''} description={values.seo_site_description ?? ''} />
+      </section>
+
+      <section className="border border-[#dfe4dc] bg-white p-5 sm:p-6">
+        <h2 className="font-display text-lg font-bold">Social sharing</h2>
+        <p className="mt-1 text-xs text-[#68736c]">How store links look on WhatsApp, Facebook, and X.</p>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2"><Field label="Social share image URL" hint="1200x630 works best."><input maxLength={2000} value={values.seo_og_image ?? ''} onChange={event => set('seo_og_image', event.target.value)} className={inputClass}/></Field></div>
+          <Field label="X (Twitter) handle" hint="e.g. @technobaazar."><input maxLength={60} value={values.seo_twitter_handle ?? ''} onChange={event => set('seo_twitter_handle', event.target.value)} placeholder="@technobaazar" className={inputClass}/></Field>
+          <Field label="Facebook page URL" hint="Full link to your page."><input maxLength={500} value={values.seo_facebook_url ?? ''} onChange={event => set('seo_facebook_url', event.target.value)} placeholder="https://facebook.com/…" className={inputClass}/></Field>
+          <Field label="Instagram URL" hint="Full link to your profile."><input maxLength={500} value={values.seo_instagram_url ?? ''} onChange={event => set('seo_instagram_url', event.target.value)} placeholder="https://instagram.com/…" className={inputClass}/></Field>
+          <Field label="YouTube URL" hint="Full link to your channel."><input maxLength={500} value={values.seo_youtube_url ?? ''} onChange={event => set('seo_youtube_url', event.target.value)} placeholder="https://youtube.com/…" className={inputClass}/></Field>
+        </div>
+        <SocialCardPreview title={values.seo_site_title ?? ''} description={values.seo_site_description ?? ''} image={values.seo_og_image ?? ''} base={values.seo_canonical_base ?? ''} />
+      </section>
+
+      <section className="border border-[#dfe4dc] bg-white p-5 sm:p-6">
+        <h2 className="font-display text-lg font-bold">Search Console & analytics</h2>
+        <p className="mt-1 text-xs text-[#68736c]">Verify ownership and measure traffic. Leave blank to skip.</p>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <Field label="Google verification code" hint="From Search Console → Settings → Verification. Just the code, not the full tag."><input maxLength={200} value={values.seo_google_verification ?? ''} onChange={event => set('seo_google_verification', event.target.value)} className={inputClass}/></Field>
+          <Field label="Bing verification code" hint="From Bing Webmaster Tools → verification meta tag content."><input maxLength={200} value={values.seo_bing_verification ?? ''} onChange={event => set('seo_bing_verification', event.target.value)} className={inputClass}/></Field>
+          <Field label="GA4 measurement ID" hint="Looks like G-XXXXXXXXXX. Loads Google Analytics on every page."><input maxLength={30} value={values.seo_ga_measurement_id ?? ''} onChange={event => set('seo_ga_measurement_id', event.target.value)} placeholder="G-XXXXXXXXXX" className={inputClass}/></Field>
+          <Field label="Tag Manager ID" hint="Looks like GTM-XXXXXXX. Skip if you already use GA above."><input maxLength={30} value={values.seo_gtm_id ?? ''} onChange={event => set('seo_gtm_id', event.target.value)} placeholder="GTM-XXXXXXX" className={inputClass}/></Field>
+          <div className="sm:col-span-2"><Field label="Meta Pixel ID" hint="Numbers only. Tracks visitors for Facebook/Instagram ads."><input maxLength={30} value={values.seo_meta_pixel_id ?? ''} onChange={event => set('seo_meta_pixel_id', event.target.value)} placeholder="1234567890" className={inputClass}/></Field></div>
+        </div>
+      </section>
+
+      <section className="border border-[#dfe4dc] bg-white p-5 sm:p-6">
+        <h2 className="font-display text-lg font-bold">Business info</h2>
+        <p className="mt-1 text-xs text-[#68736c]">Powers the Google knowledge panel (JSON-LD structured data).</p>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <Field label="Business name" hint="Shown as the organization behind the store."><input maxLength={120} value={values.seo_org_name ?? ''} onChange={event => set('seo_org_name', event.target.value)} className={inputClass}/></Field>
+          <Field label="Phone" hint="e.g. +92 300 1234567."><input maxLength={60} value={values.seo_org_phone ?? ''} onChange={event => set('seo_org_phone', event.target.value)} placeholder="+92 300 1234567" className={inputClass}/></Field>
+          <div className="sm:col-span-2"><Field label="Address" hint="Shop or office address shown to Google."><input maxLength={300} value={values.seo_org_address ?? ''} onChange={event => set('seo_org_address', event.target.value)} placeholder="Shop 12, Tech Plaza, Karachi" className={inputClass}/></Field></div>
+        </div>
+        <JsonLdPreview orgName={values.seo_org_name ?? ''} phone={values.seo_org_phone ?? ''} address={values.seo_org_address ?? ''} base={values.seo_canonical_base ?? ''} facebook={values.seo_facebook_url ?? ''} instagram={values.seo_instagram_url ?? ''} youtube={values.seo_youtube_url ?? ''} />
+      </section>
+
+      <section className="border border-[#dfe4dc] bg-white p-5 sm:p-6">
+        <h2 className="font-display text-lg font-bold">Crawl control</h2>
+        <p className="mt-1 text-xs text-[#68736c]">Tell search engines which pages to index. The sitemap builds itself from your catalog.</p>
+        <label className="mt-4 block text-sm font-semibold">robots.txt<span className="mt-1 block text-xs font-normal leading-5 text-[#68736c]">One rule per line. The sitemap URL is appended automatically.</span><textarea maxLength={4000} rows={6} value={values.seo_robots_txt ?? ''} onChange={event => set('seo_robots_txt', event.target.value)} spellCheck={false} className="mt-2 w-full resize-y border border-[#cfd6ce] p-3 font-mono text-xs font-normal leading-6 outline-none focus:border-[#315ee8]"/></label>
+        <p className="mt-3 text-xs leading-6 text-[#68736c]">Live files: <a href={`${apiUrl}/robots.txt`} target="_blank" rel="noreferrer" className="font-semibold text-[#315ee8]">robots.txt</a> · <a href={`${apiUrl}/sitemap.xml`} target="_blank" rel="noreferrer" className="font-semibold text-[#315ee8]">sitemap.xml</a> ({products.length} products indexed).</p>
+      </section>
+
+      <section className="border border-[#dfe4dc] bg-white p-5 sm:p-6">
+        <h2 className="font-display text-lg font-bold">Page titles</h2>
+        <p className="mt-1 text-xs text-[#68736c]">Overrides for store pages. Blank pages fall back to the site title and description.</p>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <Field label="About — title"><input maxLength={200} value={values.seo_about_title ?? ''} onChange={event => set('seo_about_title', event.target.value)} placeholder="About | TechnoBaazar" className={inputClass}/></Field>
+          <Field label="About — description"><input maxLength={500} value={values.seo_about_description ?? ''} onChange={event => set('seo_about_description', event.target.value)} className={inputClass}/></Field>
+          <Field label="Cart — title"><input maxLength={200} value={values.seo_cart_title ?? ''} onChange={event => set('seo_cart_title', event.target.value)} placeholder="Cart | TechnoBaazar" className={inputClass}/></Field>
+          <Field label="Cart — description"><input maxLength={500} value={values.seo_cart_description ?? ''} onChange={event => set('seo_cart_description', event.target.value)} className={inputClass}/></Field>
+          <Field label="Favorites — title"><input maxLength={200} value={values.seo_favorites_title ?? ''} onChange={event => set('seo_favorites_title', event.target.value)} placeholder="Favorites | TechnoBaazar" className={inputClass}/></Field>
+          <Field label="Favorites — description"><input maxLength={500} value={values.seo_favorites_description ?? ''} onChange={event => set('seo_favorites_description', event.target.value)} className={inputClass}/></Field>
+          <Field label="Account — title"><input maxLength={200} value={values.seo_account_title ?? ''} onChange={event => set('seo_account_title', event.target.value)} placeholder="Account | TechnoBaazar" className={inputClass}/></Field>
+          <Field label="Account — description"><input maxLength={500} value={values.seo_account_description ?? ''} onChange={event => set('seo_account_description', event.target.value)} className={inputClass}/></Field>
+        </div>
+      </section>
+
+      <ProductSeoList products={products} onProductsChange={onProductsChange} onError={onError} />
+
+      <div className="border border-[#dfe4dc] bg-white p-5 sm:p-6">
+        <Field label="Revision note" hint="Optional note stored with this draft."><input maxLength={240} value={note} onChange={event => setNote(event.target.value)} placeholder="SEO tuning for winter sale" className={inputClass}/></Field>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <button onClick={saveDraft} disabled={busy !== ''} className="h-11 bg-[#142c24] px-5 text-sm font-semibold text-white hover:bg-[#315ee8] disabled:opacity-60">{busy === 'draft' ? 'Saving…' : 'Save draft'}</button>
+          <button onClick={publish} disabled={busy !== '' || !hasDraft} className="h-11 bg-[#c7f464] px-5 text-sm font-semibold text-[#142c24] disabled:opacity-60">{busy === 'publish' ? 'Publishing…' : 'Publish'}</button>
+          <button onClick={discard} disabled={busy !== '' || !hasDraft} className="h-11 border border-[#cfd6ce] px-5 text-sm font-semibold disabled:opacity-60">{busy === 'discard' ? 'Discarding…' : 'Discard draft'}</button>
+        </div>
+      </div>
+    </div>
+    <aside className="space-y-5 xl:sticky xl:top-5">
+      <div className="border border-[#dfe4dc] bg-white p-5">
+        <h2 className="font-display text-lg font-bold">SEO health</h2>
+        <SeoHealth products={products} values={values} />
+      </div>
+      <div className="border border-[#dfe4dc] bg-white p-5">
+        <h2 className="font-display text-lg font-bold">How it works</h2>
+        <ul className="mt-3 list-disc space-y-2 pl-5 text-xs leading-5 text-[#68736c]">
+          <li>Titles and descriptions update the browser tab, Google results, and link previews.</li>
+          <li>Blank product fields fall back to the product name, detail, and image automatically.</li>
+          <li>robots.txt and sitemap.xml are served live from these settings — submit the sitemap in Search Console after publishing.</li>
+          <li>Changes go live only after you press Publish.</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+}
+
+function GoogleSnippetPreview({ base, title, description }: { base: string; title: string; description: string }) {
+  const host = base.trim().replace(/^https?:\/\//, '').replace(/\/$/, '') || 'technobaazar.pk'
+  return <div className="mt-4 border border-[#dfe4dc] bg-[#fafbf9] p-4">
+    <p className="mb-2 text-xs font-bold uppercase tracking-wider text-[#68736c]">Google result preview</p>
+    <p className="truncate text-xs text-[#455149]">{host}</p>
+    <p className="mt-0.5 line-clamp-1 text-base text-[#1a0dab]">{title.trim() || DEFAULT_LANDING_CONTENT.seo_site_title}</p>
+    <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-[#545454]">{description.trim() || DEFAULT_LANDING_CONTENT.seo_site_description}</p>
+  </div>
+}
+
+function SocialCardPreview({ title, description, image, base }: { title: string; description: string; image: string; base: string }) {
+  const host = base.trim().replace(/^https?:\/\//, '').replace(/\/$/, '') || 'technobaazar.pk'
+  return <div className="mt-4 border border-[#dfe4dc] bg-[#fafbf9] p-4">
+    <p className="mb-2 text-xs font-bold uppercase tracking-wider text-[#68736c]">Link preview (WhatsApp / Facebook / X)</p>
+    <div className="overflow-hidden border border-[#dfe4dc] bg-white">
+      {image.trim() ? <img src={image.trim()} alt="" className="aspect-[1.91/1] w-full object-cover" loading="lazy" /> : <div className="grid aspect-[1.91/1] w-full place-items-center bg-[#eef0eb] text-xs text-[#929b94]">No share image</div>}
+      <div className="border-t border-[#edf0eb] p-3">
+        <p className="text-[11px] uppercase tracking-wide text-[#68736c]">{host}</p>
+        <p className="mt-0.5 line-clamp-1 text-sm font-bold">{title.trim() || DEFAULT_LANDING_CONTENT.seo_site_title}</p>
+        <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-[#68736c]">{description.trim() || DEFAULT_LANDING_CONTENT.seo_site_description}</p>
+      </div>
+    </div>
+  </div>
+}
+
+function JsonLdPreview({ orgName, phone, address, base, facebook, instagram, youtube }: { orgName: string; phone: string; address: string; base: string; facebook: string; instagram: string; youtube: string }) {
+  const sameAs = [facebook, instagram, youtube].map(url => url.trim()).filter(Boolean)
+  const schema = {
+    '@context': 'https://schema.org', '@type': 'Organization', name: orgName.trim() || 'TechnoBaazar',
+    ...(base.trim() ? { url: base.trim() } : {}),
+    ...(phone.trim() ? { telephone: phone.trim() } : {}),
+    ...(address.trim() ? { address: { '@type': 'PostalAddress', streetAddress: address.trim() } } : {}),
+    ...(sameAs.length ? { sameAs } : {}),
+  }
+  return <div className="mt-4 border border-[#dfe4dc] bg-[#fafbf9] p-4">
+    <p className="mb-2 text-xs font-bold uppercase tracking-wider text-[#68736c]">Structured data preview (JSON-LD)</p>
+    <pre className="max-h-56 overflow-auto whitespace-pre-wrap break-words font-mono text-[11px] leading-5 text-[#455149]">{JSON.stringify(schema, null, 2)}</pre>
+  </div>
+}
+
+function SeoHealth({ products, values }: { products: Product[]; values: Record<string, string> }) {
+  const withTitle = products.filter(product => (product.seo?.title ?? '').trim()).length
+  const withDescription = products.filter(product => (product.seo?.description ?? '').trim()).length
+  const withKeywords = products.filter(product => (product.seo?.keywords ?? '').trim()).length
+  const checks = [
+    { label: 'Site title set', done: (values.seo_site_title ?? '').trim().length > 0 },
+    { label: 'Site description set', done: (values.seo_site_description ?? '').trim().length > 0 },
+    { label: 'Canonical domain set', done: (values.seo_canonical_base ?? '').trim().length > 0 },
+    { label: 'Share image set', done: (values.seo_og_image ?? '').trim().length > 0 },
+    { label: 'Google verification', done: (values.seo_google_verification ?? '').trim().length > 0 },
+    { label: 'Analytics (GA or GTM)', done: (values.seo_ga_measurement_id ?? '').trim().length > 0 || (values.seo_gtm_id ?? '').trim().length > 0 },
+    { label: 'Business phone', done: (values.seo_org_phone ?? '').trim().length > 0 },
+  ]
+  const bar = (doneCount: number, total: number) => total === 0 ? 0 : Math.round((doneCount / total) * 100)
+  return <div className="mt-3 space-y-3 text-xs">
+    <ul className="space-y-1.5">{checks.map(check => <li key={check.label} className="flex items-center gap-2"><span className={`grid size-4 shrink-0 place-items-center rounded-full text-[10px] font-bold ${check.done ? 'bg-green-100 text-green-800' : 'bg-[#eef0eb] text-[#9aa29b]'}`}>{check.done ? '\u2713' : '!'}</span><span className={check.done ? '' : 'text-[#68736c]'}>{check.label}</span></li>)}</ul>
+    <div className="border-t border-[#edf0eb] pt-3">
+      <p className="font-bold">Product coverage ({products.length} products)</p>
+      {([['Titles', withTitle], ['Descriptions', withDescription], ['Keywords', withKeywords]] as Array<[string, number]>).map(([label, doneCount]) => <div key={label} className="mt-2">
+        <div className="flex justify-between text-[#68736c]"><span>{label}</span><span>{doneCount}/{products.length}</span></div>
+        <div className="mt-1 h-1.5 bg-[#eef0eb]"><div className="h-1.5 bg-[#315ee8]" style={{ width: `${bar(doneCount, products.length)}%` }} /></div>
+      </div>)}
+    </div>
+  </div>
+}
+
+function ProductSeoList({ products, onProductsChange, onError }: { products: Product[]; onProductsChange: (products: Product[]) => void; onError: (message: string) => void }) {
+  const [query, setQuery] = useState('')
+  const [openSlug, setOpenSlug] = useState<string | null>(null)
+  const matching = products.filter(product => `${product.name} ${product.category} ${product.brand}`.toLowerCase().includes(query.toLowerCase()))
+  return <section className="border border-[#dfe4dc] bg-white p-5 sm:p-6">
+    <h2 className="font-display text-lg font-bold">Products</h2>
+    <p className="mt-1 text-xs text-[#68736c]">Tune each product&apos;s search title, description, and keywords. Changes save immediately.</p>
+    <div className="mb-3 mt-4 flex items-center gap-2 border border-[#dfe4dc] px-3"><Search size={17} className="text-[#7a857d]" /><input aria-label="Search products" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search products" className="h-11 min-w-0 flex-1 text-sm outline-none" /></div>
+    <ul className="max-h-[480px] space-y-2 overflow-y-auto pr-1">{matching.map(product => <ProductSeoRow key={product.slug} product={product} open={openSlug === product.slug} onToggle={() => setOpenSlug(openSlug === product.slug ? null : product.slug)} onSaved={(saved) => onProductsChange(products.map(item => item.slug === saved.slug ? saved : item))} onError={onError} />)}</ul>
+    {!matching.length && <p className="mt-3 text-sm text-[#68736c]">No matching products.</p>}
+  </section>
+}
+
+function ProductSeoRow({ product, open, onToggle, onSaved, onError }: { product: Product; open: boolean; onToggle: () => void; onSaved: (product: Product) => void; onError: (message: string) => void }) {
+  const seo = product.seo ?? { title: '', description: '', keywords: '', ogTitle: '', ogDescription: '', ogImage: '', canonicalUrl: '' }
+  const [title, setTitle] = useState(seo.title)
+  const [description, setDescription] = useState(seo.description)
+  const [keywords, setKeywords] = useState(seo.keywords)
+  const [busy, setBusy] = useState(false)
+  useEffect(() => { if (open) { setTitle(seo.title); setDescription(seo.description); setKeywords(seo.keywords) } }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+  const dots: Array<[string, boolean]> = [['Title', seo.title.trim().length > 0], ['Description', seo.description.trim().length > 0], ['Keywords', seo.keywords.trim().length > 0]]
+
+  async function save() {
+    setBusy(true)
+    try {
+      const saved = await adminFetch<Product>(`/api/admin/products/${product.slug}`, { method: 'PUT', body: JSON.stringify({ seoTitle: title.trim(), seoDescription: description.trim(), seoKeywords: keywords.trim() }) })
+      onSaved(saved)
+      onError('')
+    } catch (cause) {
+      onError(cause instanceof Error ? cause.message : 'Product SEO was not saved.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return <li className="border border-[#edf0eb]">
+    <button type="button" onClick={onToggle} className="flex w-full items-center gap-3 p-3 text-left text-sm hover:bg-[#fafbf9]">
+      <span className="min-w-0 flex-1"><span className="block truncate font-semibold">{product.name}</span><span className="text-xs text-[#68736c]">{product.category} · {product.price}</span></span>
+      <span className="flex shrink-0 gap-1">{dots.map(([label, done]) => <span key={label} title={done ? `${label} set` : `${label} missing`} className={`size-2.5 rounded-full ${done ? 'bg-green-500' : 'bg-[#dfe4dc]'}`} />)}</span>
+    </button>
+    {open && <div className="grid gap-3 border-t border-[#edf0eb] bg-[#fafbf9] p-3">
+      <Field label="SEO title" hint="Blank falls back to “Name Price in Pakistan | TechnoBaazar”."><input maxLength={200} value={title} onChange={event => setTitle(event.target.value)} className="mt-2 h-10 w-full border border-[#cfd6ce] bg-white px-2.5 text-xs font-normal outline-none focus:border-[#315ee8]" /></Field>
+      <Field label="Meta description" hint="Blank falls back to the product detail line."><textarea maxLength={500} rows={2} value={description} onChange={event => setDescription(event.target.value)} className="mt-2 w-full resize-y border border-[#cfd6ce] bg-white p-2.5 text-xs font-normal leading-5 outline-none focus:border-[#315ee8]" /></Field>
+      <Field label="Keywords" hint="Comma-separated."><input maxLength={500} value={keywords} onChange={event => setKeywords(event.target.value)} className="mt-2 h-10 w-full border border-[#cfd6ce] bg-white px-2.5 text-xs font-normal outline-none focus:border-[#315ee8]" /></Field>
+      <div><button onClick={save} disabled={busy} className="h-10 bg-[#142c24] px-4 text-xs font-semibold text-white hover:bg-[#315ee8] disabled:opacity-60">{busy ? 'Saving…' : 'Save product SEO'}</button></div>
+    </div>}
+  </li>
 }
 
 // ---------------------------------------------------------------- settings ---

@@ -288,6 +288,25 @@ function App() {
     const canonicalFor = (path: string) => (base ? `${base}${path}` : '')
     const fallback = (value: string | undefined, next: string) => (value ?? '').trim() || next
     const path = location.pathname
+    const orgName = content.seo_org_name.trim() || 'TechnoBaazar'
+    const sameAs = [content.seo_facebook_url, content.seo_instagram_url, content.seo_youtube_url]
+      .map(url => url.trim()).filter(Boolean)
+    const org: Record<string, unknown> = { '@context': 'https://schema.org', '@type': 'Organization', name: orgName }
+    if (base) org.url = base
+    if (content.seo_org_phone.trim()) org.telephone = content.seo_org_phone.trim()
+    if (content.seo_org_address.trim()) org.address = { '@type': 'PostalAddress', streetAddress: content.seo_org_address.trim() }
+    if (sameAs.length) org.sameAs = sameAs
+    const website: Record<string, unknown> = { '@context': 'https://schema.org', '@type': 'WebSite', name: orgName }
+    if (base) website.url = base
+    const shared = {
+      googleVerification: content.seo_google_verification,
+      bingVerification: content.seo_bing_verification,
+      twitterHandle: content.seo_twitter_handle,
+      gaMeasurementId: content.seo_ga_measurement_id,
+      gtmId: content.seo_gtm_id,
+      metaPixelId: content.seo_meta_pixel_id,
+      jsonLd: JSON.stringify([org, website]),
+    }
 
     const productMatch = path.match(/^\/products\/([^/]+)$/)
     if (productMatch) {
@@ -302,6 +321,7 @@ function App() {
           ogDescription: fallback(product.seo?.ogDescription, description),
           ogImage: fallback(product.seo?.ogImage, product.image || content.seo_og_image),
           ogType: 'product', canonical: fallback(product.seo?.canonicalUrl, canonicalFor(path)), noIndex: false,
+          ...shared,
         }
       }
     }
@@ -317,7 +337,7 @@ function App() {
         return {
           title, description, keywords: content.seo_site_keywords, ogTitle: title,
           ogDescription: description, ogImage: content.seo_og_image, ogType: 'website',
-          canonical: canonicalFor(path), noIndex: false,
+          canonical: canonicalFor(path), noIndex: false, ...shared,
         }
       }
     }
@@ -326,24 +346,32 @@ function App() {
       return {
         title: siteTitle, description: siteDescription, keywords: content.seo_site_keywords,
         ogTitle: siteTitle, ogDescription: siteDescription, ogImage: content.seo_og_image,
-        ogType: 'website', canonical: canonicalFor('/'), noIndex: false,
+        ogType: 'website', canonical: canonicalFor('/'), noIndex: false, ...shared,
       }
     }
 
-    const staticTitles: Record<string, string> = { '/about': 'About', '/favorites': 'Favorites', '/cart': 'Cart', '/account': 'Account' }
-    if (staticTitles[path]) {
-      const title = `${staticTitles[path]} | TechnoBaazar`
+    const staticPages: Record<string, { label: string; titleKey: 'seo_about_title' | 'seo_cart_title' | 'seo_favorites_title' | 'seo_account_title'; descKey: 'seo_about_description' | 'seo_cart_description' | 'seo_favorites_description' | 'seo_account_description' }> = {
+      '/about': { label: 'About', titleKey: 'seo_about_title', descKey: 'seo_about_description' },
+      '/favorites': { label: 'Favorites', titleKey: 'seo_favorites_title', descKey: 'seo_favorites_description' },
+      '/cart': { label: 'Cart', titleKey: 'seo_cart_title', descKey: 'seo_cart_description' },
+      '/account': { label: 'Account', titleKey: 'seo_account_title', descKey: 'seo_account_description' },
+    }
+    if (staticPages[path]) {
+      const page = staticPages[path]
+      const title = fallback(content[page.titleKey], `${page.label} | TechnoBaazar`)
+      const description = fallback(content[page.descKey], siteDescription)
+      const customerOnly = path === '/cart' || path === '/account'
       return {
-        title, description: siteDescription, keywords: content.seo_site_keywords, ogTitle: title,
-        ogDescription: siteDescription, ogImage: content.seo_og_image, ogType: 'website',
-        canonical: canonicalFor(path), noIndex: false,
+        title, description, keywords: content.seo_site_keywords, ogTitle: title,
+        ogDescription: description, ogImage: content.seo_og_image, ogType: 'website',
+        canonical: canonicalFor(path), noIndex: customerOnly, ...shared,
       }
     }
 
     return {
       title: path.startsWith('/admin') ? 'Admin | TechnoBaazar' : 'Not found | TechnoBaazar',
       description: siteDescription, keywords: '', ogTitle: '', ogDescription: '', ogImage: '',
-      ogType: 'website', canonical: '', noIndex: true,
+      ogType: 'website', canonical: '', noIndex: true, ...shared,
     }
   }, [location.pathname, catalog, content, storeCategories])
 

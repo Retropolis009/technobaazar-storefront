@@ -12,11 +12,14 @@ from uuid import uuid4
 from urllib.parse import urlparse
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from flask import Flask, jsonify, request, session, send_from_directory
+from dotenv import load_dotenv
+from flask import Flask, Response, jsonify, request, session, send_from_directory
 from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import check_password_hash, generate_password_hash
+
+load_dotenv(Path(__file__).with_name('.env'))
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -90,8 +93,29 @@ SITE_CONTENT_DEFAULTS = {
     'seo_site_keywords': 'computer store pakistan, gaming pc, graphics cards, laptops, processors, technobaazar',
     'seo_og_image': 'https://images.unsplash.com/photo-1593305841991-05c297ba4575?auto=format&fit=crop&w=1200&q=80',
     'seo_canonical_base': '',
+    'seo_google_verification': '',
+    'seo_bing_verification': '',
+    'seo_ga_measurement_id': '',
+    'seo_gtm_id': '',
+    'seo_meta_pixel_id': '',
+    'seo_twitter_handle': '',
+    'seo_facebook_url': '',
+    'seo_instagram_url': '',
+    'seo_youtube_url': '',
+    'seo_org_name': 'TechnoBaazar',
+    'seo_org_phone': '',
+    'seo_org_address': '',
+    'seo_robots_txt': 'User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /cart\nDisallow: /account',
+    'seo_about_title': '',
+    'seo_about_description': '',
+    'seo_cart_title': '',
+    'seo_cart_description': '',
+    'seo_favorites_title': '',
+    'seo_favorites_description': '',
+    'seo_account_title': '',
+    'seo_account_description': '',
 }
-SITE_CONTENT_URL_FIELDS = {'hero_cta_url', 'hero_image', 'seo_og_image'}
+SITE_CONTENT_URL_FIELDS = {'hero_cta_url', 'hero_image', 'seo_og_image', 'seo_facebook_url', 'seo_instagram_url', 'seo_youtube_url'}
 SITE_CONTENT_STRUCTURED_FIELDS = {'benefits'}
 SITE_CONTENT_LIMITS = {key: 500 for key in SITE_CONTENT_DEFAULTS}
 SITE_CONTENT_LIMITS.update({'hero_subtitle': 500, 'featured_subtitle': 500, 'benefits': 4000,
@@ -104,7 +128,15 @@ SITE_CONTENT_LIMITS.update({'hero_subtitle': 500, 'featured_subtitle': 500, 'ben
                              'footer_admin_text': 40, 'footer_home_text': 60,
                              'seo_site_title': 200, 'seo_site_description': 500,
                              'seo_site_keywords': 500, 'seo_og_image': 2000,
-                             'seo_canonical_base': 500})
+                             'seo_canonical_base': 500, 'seo_google_verification': 200,
+                             'seo_bing_verification': 200, 'seo_ga_measurement_id': 30,
+                             'seo_gtm_id': 30, 'seo_meta_pixel_id': 30, 'seo_twitter_handle': 60,
+                             'seo_facebook_url': 500, 'seo_instagram_url': 500, 'seo_youtube_url': 500,
+                             'seo_org_name': 120, 'seo_org_phone': 60, 'seo_org_address': 300,
+                             'seo_robots_txt': 4000, 'seo_about_title': 200, 'seo_about_description': 500,
+                             'seo_cart_title': 200, 'seo_cart_description': 500,
+                             'seo_favorites_title': 200, 'seo_favorites_description': 500,
+                             'seo_account_title': 200, 'seo_account_description': 500})
 
 DELIVERY_CITIES_SEED = [
     ('karachi', 'Karachi', 350), ('lahore', 'Lahore', 350), ('islamabad', 'Islamabad', 350),
@@ -867,6 +899,30 @@ def create_app():
     @app.get('/api/site-content')
     def public_site_content():
         return jsonify(read_published_site_content())
+
+    @app.get('/robots.txt')
+    def robots_txt():
+        content = read_published_site_content()
+        text = (content.get('seo_robots_txt') or '').strip() or SITE_CONTENT_DEFAULTS['seo_robots_txt']
+        base = (content.get('seo_canonical_base') or '').strip().rstrip('/')
+        if base and 'sitemap:' not in text.lower():
+            text = f'{text.rstrip()}\n\nSitemap: {base}/sitemap.xml'
+        return Response(text + '\n', mimetype='text/plain')
+
+    @app.get('/sitemap.xml')
+    def sitemap_xml():
+        from xml.sax.saxutils import escape
+        content = read_published_site_content()
+        base = (content.get('seo_canonical_base') or '').strip().rstrip('/') or request.host_url.rstrip('/')
+        entries = [(f'{base}/', '1.0'), (f'{base}/about', '0.8')]
+        for category in Category.query.filter_by(visible=True).order_by(Category.sort_order, Category.name).all():
+            slug = getattr(category, 'slug', '') or re.sub(r'[^a-z0-9]+', '-', category.name.lower()).strip('-')
+            entries.append((f'{base}/collections/{slug}', '0.9'))
+        for product in Product.query.filter_by(active=True).order_by(Product.slug).all():
+            entries.append((f'{base}/products/{product.slug}', '0.8'))
+        urls = ''.join(f'  <url><loc>{escape(loc)}</loc><priority>{priority}</priority></url>\n' for loc, priority in entries)
+        return Response(f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}</urlset>\n',
+                        mimetype='application/xml')
 
     @app.get('/api/store-settings')
     def public_store_settings():
