@@ -15,6 +15,7 @@ technobaazar-storefront/
 
 - Node.js 20.19+ or 22.12+ (frontend)
 - Python 3.11+ (backend)
+- Docker Compose v2 (for the recommended local PostgreSQL setup)
 
 ## Run locally
 
@@ -50,9 +51,44 @@ Notes:
 - `seed-catalog` imports the starter products plus store defaults (delivery
   cities, settings, categories, landing content). `seed-store` refreshes just
   the store defaults and is safe to rerun.
-- The app also creates missing tables and default rows at startup
-  (Nutikals-style runtime ensures). In production, run migrations and set
-  `AUTO_CREATE_TABLES=false`.
+- For the documented migration workflow, keep `AUTO_CREATE_TABLES=false` and
+  run Alembic before startup. Set it to `true` only for quick throwaway
+  prototypes that intentionally skip migrations; production should always use
+  migrations with runtime table creation disabled.
+
+
+### Local PostgreSQL (recommended)
+
+Start a persistent local Postgres 16 database from the repository root:
+
+```sh
+docker compose up -d --wait postgres
+cd backend
+python -m venv .venv
+.venv/bin/activate            # Windows: .venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+cp .env.example .env          # Windows: Copy-Item .env.example .env
+```
+
+The example `.env` points `DATABASE_URL` at the Compose database
+(`postgresql+psycopg://technobaazar:technobaazar@localhost:5432/technobaazar`).
+These credentials are for local development only. Then apply the full Alembic
+migration chain, seed the 57 starter listings, and verify the configured DB:
+
+```sh
+flask --app app db upgrade
+flask --app app create-admin    # needs ADMIN_EMAIL + ADMIN_PASSWORD in .env
+flask --app app seed-catalog
+flask --app app verify-catalog # must report 57/57 in postgresql database
+flask --app app run --debug
+```
+
+The seeded catalog is intentionally one-time per database; `seed-catalog`
+refuses to overwrite an already initialized catalog. To reset this disposable
+local database and start over, run `docker compose down -v` and then repeat the
+commands. Keep `DATABASE_URL` set in the backend environment to run the store
+against Postgres. SQLite remains supported if you explicitly set
+`DATABASE_URL=sqlite:///store.db`.
 
 ## Database migrations
 
@@ -101,6 +137,9 @@ Open `/admin` and sign in through the Flask API:
 - **Settings** — delivery fees, free-delivery threshold, low-stock alert,
   delivery cities, coupons, category visibility, and the media library
   (uploaded images are served from `/api/media/...`).
+- **SEO** — site and page-level snippets, search-engine verification, analytics
+  IDs, robots.txt, business JSON-LD details, social profiles, live snippet/card
+  previews, and a searchable product SEO editor with completeness indicators.
 
 ## Customer checkout
 

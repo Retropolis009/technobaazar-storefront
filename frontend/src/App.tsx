@@ -330,12 +330,18 @@ function App() {
       }
     }
 
-    const staticTitles: Record<string, string> = { '/about': 'About', '/favorites': 'Favorites', '/cart': 'Cart', '/account': 'Account' }
-    if (staticTitles[path]) {
-      const title = `${staticTitles[path]} | TechnoBaazar`
+    const seoValues = content as unknown as Record<string, string>
+    const staticPages: Record<string, { label: string; key: string }> = {
+      '/about': { label: 'About', key: 'about' }, '/favorites': { label: 'Favorites', key: 'favorites' },
+      '/cart': { label: 'Cart', key: 'cart' }, '/account': { label: 'Account', key: 'account' },
+    }
+    if (staticPages[path]) {
+      const page = staticPages[path]
+      const title = fallback(seoValues[`seo_${page.key}_title`], `${page.label} | TechnoBaazar`)
+      const description = fallback(seoValues[`seo_${page.key}_description`], siteDescription)
       return {
-        title, description: siteDescription, keywords: content.seo_site_keywords, ogTitle: title,
-        ogDescription: siteDescription, ogImage: content.seo_og_image, ogType: 'website',
+        title, description, keywords: content.seo_site_keywords, ogTitle: title,
+        ogDescription: description, ogImage: content.seo_og_image, ogType: 'website',
         canonical: canonicalFor(path), noIndex: false,
       }
     }
@@ -351,7 +357,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-[#f5f6f2] text-[#15201c]">
-      <SeoHead {...pageSeo} />
+      <SeoHead {...pageSeo} settings={content as unknown as Record<string, string>} />
       {!isAdminRoute && <SiteHeader
         departments={activeDepartments}
         search={search}

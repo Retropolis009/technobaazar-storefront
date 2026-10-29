@@ -6,7 +6,7 @@ import { DEFAULT_LANDING_CONTENT } from '../content'
 import { apiUrl, formatPKR, type AdminCoupon, type AdminSettings, type Category, type CategoryField, type ContentRevision, type DashboardStats, type MediaFile, type OrderSummary } from '../api'
 
 interface Props { products: Product[]; onProductsChange: (products: Product[]) => void }
-type Section = 'overview' | 'catalog' | 'orders' | 'content' | 'settings'
+type Section = 'overview' | 'catalog' | 'orders' | 'content' | 'seo' | 'settings'
 type Draft = {
   slug: string; name: string; category: string; brand: string; price: string; compareAtPrice: string; badge: string
   detail: string; description: string; image: string; imageAlt: string; stockQuantity: string
@@ -185,6 +185,7 @@ function AdminPage({ products, onProductsChange }: Props) {
     catalog: { title: 'Products', note: 'Manage products, prices, page content, and available stock.' },
     orders: { title: 'Orders', note: 'Confirm, ship, and track customer orders.' },
     content: { title: 'Landing content', note: 'Edit the homepage, then publish when it looks right.' },
+    seo: { title: 'SEO & growth', note: 'Manage search snippets, social cards, structured data, tracking, and product SEO.' },
     settings: { title: 'Store settings', note: 'Delivery fees, coupons, categories, and media.' },
   }
 
@@ -195,6 +196,7 @@ function AdminPage({ products, onProductsChange }: Props) {
         <NavButton active={section === 'catalog'} onClick={() => setSection('catalog')} icon={<Boxes size={17}/>} label="Products" />
         <NavButton active={section === 'orders'} onClick={() => setSection('orders')} icon={<ClipboardList size={17}/>} label="Orders" />
         <NavButton active={section === 'content'} onClick={() => setSection('content')} icon={<PenLine size={17}/>} label="Landing content" />
+        <NavButton active={section === 'seo'} onClick={() => setSection('seo')} icon={<Search size={17}/>} label="SEO" />
         <NavButton active={section === 'settings'} onClick={() => setSection('settings')} icon={<SettingsIcon size={17}/>} label="Settings" />
       </nav>
       <button onClick={() => navigate('/')} className="mt-3 hidden px-3 py-3 text-left text-sm text-[#68736c] hover:text-[#315ee8] md:block">← Back to storefront</button>
@@ -212,6 +214,7 @@ function AdminPage({ products, onProductsChange }: Props) {
       />}
       {section === 'orders' && <OrdersSection onError={setError} />}
       {section === 'content' && <ContentSection onError={setError} />}
+      {section === 'seo' && <SEOSection products={products} onProductsChange={onProductsChange} onError={setError} />}
       {section === 'settings' && <SettingsSection onError={setError} onCategoriesChange={setAvailableCategories} />}
     </div></div>
     {formOpen && <div className="fixed inset-0 z-50 overflow-y-auto bg-[#15201c]/60 p-2 sm:p-5">
@@ -813,6 +816,111 @@ function LandingPreview({ values, benefits }: { values: Record<string, string>; 
       <p className="text-[11px] font-bold">{text('footer_brand_text')}</p>
       <p className="text-[9px] text-white/75">{text('footer_tagline')}</p>
       <p className="mt-1 text-[9px] text-white/75">{text('footer_home_text')} \u00b7 {text('footer_admin_text')}</p>
+    </div>
+  </div>
+}
+
+// ---------------------------------------------------------------- seo ---
+const SEO_FIELDS: Array<{ key: string; label: string; group: string; multiline?: boolean; hint?: string }> = [
+  { key: 'seo_site_title', label: 'Site title', group: 'Search appearance', hint: 'Homepage title. Aim for about 60 characters.' },
+  { key: 'seo_site_description', label: 'Site description', group: 'Search appearance', multiline: true, hint: 'Homepage search snippet. Aim for 150–160 characters.' },
+  { key: 'seo_site_keywords', label: 'Site keywords', group: 'Search appearance' },
+  { key: 'seo_og_image', label: 'Default social-card image URL', group: 'Search appearance', hint: '1200 × 630 pixels is a good share-card size.' },
+  { key: 'seo_canonical_base', label: 'Canonical base URL', group: 'Search appearance', hint: 'For example https://technobaazar.pk' },
+  ...(['about', 'cart', 'favorites', 'account'] as const).flatMap(page => [
+    { key: `seo_${page}_title`, label: `${page[0].toUpperCase()}${page.slice(1)} page title`, group: 'Page overrides' },
+    { key: `seo_${page}_description`, label: `${page[0].toUpperCase()}${page.slice(1)} page description`, group: 'Page overrides', multiline: true },
+  ]),
+  { key: 'seo_google_verification', label: 'Google Search Console verification code', group: 'Verification & analytics' },
+  { key: 'seo_bing_verification', label: 'Bing Webmaster verification code', group: 'Verification & analytics' },
+  { key: 'seo_google_analytics_id', label: 'Google Analytics measurement ID', group: 'Verification & analytics', hint: 'Format: G-XXXXXXXXXX' },
+  { key: 'seo_google_tag_manager_id', label: 'Google Tag Manager container ID', group: 'Verification & analytics', hint: 'Format: GTM-XXXXXXX' },
+  { key: 'seo_meta_pixel_id', label: 'Meta Pixel ID', group: 'Verification & analytics' },
+  { key: 'seo_business_name', label: 'Business name', group: 'Business structured data' },
+  { key: 'seo_business_legal_name', label: 'Legal name', group: 'Business structured data' },
+  { key: 'seo_business_phone', label: 'Phone', group: 'Business structured data' },
+  { key: 'seo_business_email', label: 'Email', group: 'Business structured data' },
+  { key: 'seo_business_street', label: 'Street address', group: 'Business structured data' },
+  { key: 'seo_business_city', label: 'City', group: 'Business structured data' },
+  { key: 'seo_business_region', label: 'Region / province', group: 'Business structured data' },
+  { key: 'seo_business_postal_code', label: 'Postal code', group: 'Business structured data' },
+  { key: 'seo_business_country', label: 'Country code', group: 'Business structured data' },
+  { key: 'seo_business_logo', label: 'Business logo URL', group: 'Business structured data' },
+  ...(['facebook', 'instagram', 'tiktok', 'youtube', 'x'] as const).map(network => ({
+    key: `seo_social_${network}`, label: `${network[0].toUpperCase()}${network.slice(1)} URL`, group: 'Social profiles',
+  })),
+  { key: 'seo_robots_txt', label: 'robots.txt rules', group: 'Crawler controls', multiline: true, hint: 'Sitemap URL is added automatically when a canonical base URL is set.' },
+]
+
+function SEOSection({ products, onProductsChange, onError }: { products: Product[]; onProductsChange: (products: Product[]) => void; onError: (message: string) => void }) {
+  const [values, setValues] = useState<Record<string, string>>({})
+  const [query, setQuery] = useState('')
+  const [selectedSlug, setSelectedSlug] = useState('')
+  const [productDraft, setProductDraft] = useState({ title: '', description: '', keywords: '', ogTitle: '', ogDescription: '', ogImage: '', canonicalUrl: '' })
+  const [busy, setBusy] = useState(false)
+  const [hasDraft, setHasDraft] = useState(false)
+  const selectedProduct = products.find(product => product.slug === selectedSlug)
+  const matches = products.filter(product => `${product.name} ${product.brand} ${product.category}`.toLowerCase().includes(query.toLowerCase()))
+  const completeness = (product: Product) => [product.seo?.title, product.seo?.description, product.seo?.ogImage].filter(value => Boolean(value?.trim())).length
+
+  async function load() {
+    try {
+      const data = await adminFetch<Record<string, unknown>>('/api/admin/site-content')
+      const next: Record<string, string> = {}
+      for (const field of SEO_FIELDS) next[field.key] = typeof data[field.key] === 'string' ? data[field.key] as string : ''
+      setValues(next)
+      setHasDraft(data._has_draft === true)
+    } catch (cause) { onError(cause instanceof Error ? cause.message : 'Could not load SEO settings.') }
+  }
+  useEffect(() => { void load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!selectedProduct) return
+    setProductDraft({ title: selectedProduct.seo?.title ?? '', description: selectedProduct.seo?.description ?? '', keywords: selectedProduct.seo?.keywords ?? '', ogTitle: selectedProduct.seo?.ogTitle ?? '', ogDescription: selectedProduct.seo?.ogDescription ?? '', ogImage: selectedProduct.seo?.ogImage ?? '', canonicalUrl: selectedProduct.seo?.canonicalUrl ?? '' })
+  }, [selectedSlug, selectedProduct])
+  const setValue = (key: string, value: string) => setValues(current => ({ ...current, [key]: value }))
+
+  async function saveSettings() {
+    setBusy(true)
+    try {
+      await adminFetch('/api/admin/site-content', { method: 'PUT', body: JSON.stringify({ values, note: 'SEO settings' }) })
+      await load(); onError('')
+    } catch (cause) { onError(cause instanceof Error ? cause.message : 'SEO settings were not saved.') }
+    finally { setBusy(false) }
+  }
+  async function publishSettings() {
+    setBusy(true)
+    try { await adminFetch('/api/admin/site-content/publish', { method: 'POST' }); await load(); onError('') }
+    catch (cause) { onError(cause instanceof Error ? cause.message : 'SEO settings were not published.') }
+    finally { setBusy(false) }
+  }
+  async function saveProductSEO() {
+    if (!selectedProduct) return
+    setBusy(true)
+    try {
+      const saved = await adminFetch<Product>(`/api/admin/products/${selectedProduct.slug}`, { method: 'PUT', body: JSON.stringify({ seoTitle: productDraft.title, seoDescription: productDraft.description, seoKeywords: productDraft.keywords, ogTitle: productDraft.ogTitle, ogDescription: productDraft.ogDescription, ogImage: productDraft.ogImage, canonicalUrl: productDraft.canonicalUrl }) })
+      onProductsChange(products.map(product => product.slug === saved.slug ? saved : product)); onError('')
+    } catch (cause) { onError(cause instanceof Error ? cause.message : 'Product SEO could not be saved.') }
+    finally { setBusy(false) }
+  }
+  const title = values.seo_site_title || 'TechnoBaazar — Computer Store in Pakistan'
+  const description = values.seo_site_description || 'Shop computers and gaming gear online in Pakistan.'
+  const base = (values.seo_canonical_base || 'https://technobaazar.pk').replace(/\/$/, '')
+  const grouped = [...new Set(SEO_FIELDS.map(field => field.group))]
+
+  return <div className="space-y-6">
+    <div className="border border-[#dfe4dc] bg-white p-5 sm:p-6"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-display text-lg font-bold">Store-wide SEO</h2><p className="mt-1 text-xs text-[#68736c]">Settings are versioned with the CMS. Save a draft, then publish to make crawler-visible settings live.</p></div>{hasDraft && <span className="bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800">Unpublished draft</span>}</div>
+      <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="space-y-5">{grouped.map(group => <section key={group} className="border-t border-[#edf0eb] pt-4"><h3 className="font-semibold">{group}</h3><div className="mt-3 grid gap-4 sm:grid-cols-2">{SEO_FIELDS.filter(field => field.group === group).map(field => <label key={field.key} className={`block text-sm font-semibold ${field.multiline ? 'sm:col-span-2' : ''}`}>{field.label}{field.multiline ? <textarea rows={field.key === 'seo_robots_txt' ? 7 : 3} value={values[field.key] ?? ''} onChange={event => setValue(field.key, event.target.value)} className="mt-2 w-full resize-y border border-[#cfd6ce] p-3 text-sm font-normal leading-6 outline-none focus:border-[#315ee8]"/> : <input value={values[field.key] ?? ''} onChange={event => setValue(field.key, event.target.value)} className={inputClass}/ >}{field.hint && <span className="mt-1 block text-xs font-normal leading-5 text-[#68736c]">{field.hint}</span>}</label>)}</div></section>)}</div>
+        <aside className="space-y-4"><div className="border border-[#dfe4dc] bg-[#fafbf9] p-4"><p className="text-[10px] font-bold uppercase tracking-widest text-[#68736c]">Google search snippet preview</p><p className="mt-3 truncate text-xs text-[#455149]">{base}/</p><p className="mt-1 line-clamp-1 text-base text-[#1a0dab]">{title}</p><p className="mt-1 line-clamp-2 text-xs leading-5 text-[#545454]">{description}</p></div>
+          <div className="overflow-hidden border border-[#dfe4dc] bg-[#f7f8f5]">{values.seo_og_image && <img src={values.seo_og_image} alt="Social preview" className="h-40 w-full object-cover"/>}<div className="p-4"><p className="text-[10px] font-bold uppercase tracking-widest text-[#68736c]">Social card preview</p><p className="mt-2 truncate text-sm font-bold">{title}</p><p className="mt-1 line-clamp-2 text-xs text-[#68736c]">{description}</p><p className="mt-2 text-[10px] uppercase text-[#68736c]">{base.replace(/^https?:\/\//, '')}</p></div></div>
+          <p className="border border-blue-100 bg-blue-50 p-3 text-xs leading-5 text-blue-900">Crawler endpoints: <a className="underline" href="/robots.txt" target="_blank" rel="noreferrer">/robots.txt</a> · <a className="underline" href="/sitemap.xml" target="_blank" rel="noreferrer">/sitemap.xml</a></p>
+          <div className="flex flex-wrap gap-2"><button type="button" onClick={() => void saveSettings()} disabled={busy} className="h-10 bg-[#142c24] px-4 text-sm font-semibold text-white disabled:opacity-50">{busy ? 'Saving…' : 'Save SEO draft'}</button><button type="button" onClick={() => void publishSettings()} disabled={busy || !hasDraft} className="h-10 bg-[#c7f464] px-4 text-sm font-semibold text-[#142c24] disabled:opacity-50">Publish SEO</button></div>
+        </aside>
+      </div>
+    </div>
+    <div className="grid gap-5 xl:grid-cols-[minmax(260px,.75fr)_minmax(0,1.25fr)]">
+      <section className="border border-[#dfe4dc] bg-white p-5"><h2 className="font-display text-lg font-bold">Product SEO</h2><p className="mt-1 text-xs text-[#68736c]">Search all {products.length} active listings. Completeness counts title, description, and social image.</p><label className="mt-4 flex h-11 items-center gap-2 border border-[#cfd6ce] px-3"><Search size={16}/><input aria-label="Search products for SEO" value={query} onChange={event => setQuery(event.target.value)} placeholder="Name, brand, category…" className="min-w-0 flex-1 text-sm outline-none"/></label><div className="mt-3 max-h-[520px] divide-y divide-[#edf0eb] overflow-y-auto">{matches.map(product => { const score = completeness(product); return <button key={product.slug} type="button" onClick={() => setSelectedSlug(product.slug)} className={`flex w-full items-center justify-between gap-2 p-3 text-left hover:bg-[#f7f8f5] ${selectedSlug === product.slug ? 'bg-blue-50' : ''}`}><span className="min-w-0"><strong className="block truncate text-sm">{product.name}</strong><span className="text-xs text-[#68736c]">{product.category}</span></span><span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-bold ${score === 3 ? 'bg-green-100 text-green-800' : score ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'}`}>{score}/3 complete</span></button>})}{matches.length === 0 && <p className="p-4 text-sm text-[#68736c]">No matching products.</p>}</div></section>
+      <section className="border border-[#dfe4dc] bg-white p-5">{selectedProduct ? <><div className="flex flex-wrap items-start justify-between gap-2"><div><p className="section-kicker mb-0">Product SEO editor</p><h3 className="font-display text-xl font-bold">{selectedProduct.name}</h3><a className="text-xs text-[#315ee8] underline" href={`/products/${selectedProduct.slug}`} target="_blank" rel="noreferrer">Preview product page</a></div><span className="text-xs text-[#68736c]">{completeness(selectedProduct)}/3 complete</span></div><div className="mt-4 grid gap-4 sm:grid-cols-2"><Field label="SEO title" hint={`${productDraft.title.length}/200; recommended under 60`}><input maxLength={200} value={productDraft.title} onChange={event => setProductDraft({ ...productDraft, title: event.target.value })} className={inputClass}/></Field><Field label="Meta description" hint={`${productDraft.description.length}/500; recommended under 160`}><textarea maxLength={500} rows={3} value={productDraft.description} onChange={event => setProductDraft({ ...productDraft, description: event.target.value })} className="mt-2 w-full border border-[#cfd6ce] p-3 text-sm outline-none focus:border-[#315ee8]"/></Field><Field label="Keywords"><input maxLength={500} value={productDraft.keywords} onChange={event => setProductDraft({ ...productDraft, keywords: event.target.value })} className={inputClass}/></Field><Field label="Open Graph title"><input maxLength={200} value={productDraft.ogTitle} onChange={event => setProductDraft({ ...productDraft, ogTitle: event.target.value })} className={inputClass}/></Field><Field label="Open Graph description"><textarea maxLength={500} rows={3} value={productDraft.ogDescription} onChange={event => setProductDraft({ ...productDraft, ogDescription: event.target.value })} className="mt-2 w-full border border-[#cfd6ce] p-3 text-sm outline-none focus:border-[#315ee8]"/></Field><Field label="Social image URL"><input maxLength={2000} value={productDraft.ogImage} onChange={event => setProductDraft({ ...productDraft, ogImage: event.target.value })} className={inputClass}/></Field><div className="sm:col-span-2"><Field label="Canonical URL"><input maxLength={1000} value={productDraft.canonicalUrl} onChange={event => setProductDraft({ ...productDraft, canonicalUrl: event.target.value })} className={inputClass}/></Field></div></div><div className="mt-5 flex flex-wrap items-center gap-4"><button type="button" onClick={() => void saveProductSEO()} disabled={busy} className="h-10 bg-[#142c24] px-4 text-sm font-semibold text-white disabled:opacity-50">Save product SEO</button><div className="min-w-[260px] flex-1 border border-[#dfe4dc] bg-[#fafbf9] p-3"><p className="text-xs font-bold text-[#1a0dab]">{productDraft.title || `${selectedProduct.name} Price in Pakistan | TechnoBaazar`}</p><p className="mt-1 line-clamp-2 text-xs text-[#545454]">{productDraft.description || `${selectedProduct.name} — ${selectedProduct.detail}`}</p></div></div></> : <div className="grid min-h-60 place-items-center text-sm text-[#68736c]">Select a product to edit its search and social metadata.</div>}</section>
     </div>
   </div>
 }

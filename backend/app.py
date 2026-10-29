@@ -90,8 +90,37 @@ SITE_CONTENT_DEFAULTS = {
     'seo_site_keywords': 'computer store pakistan, gaming pc, graphics cards, laptops, processors, technobaazar',
     'seo_og_image': 'https://images.unsplash.com/photo-1593305841991-05c297ba4575?auto=format&fit=crop&w=1200&q=80',
     'seo_canonical_base': '',
+    'seo_google_verification': '',
+    'seo_bing_verification': '',
+    'seo_google_analytics_id': '',
+    'seo_google_tag_manager_id': '',
+    'seo_meta_pixel_id': '',
+    'seo_robots_txt': 'User-agent: *\nAllow: /',
+    'seo_business_name': 'TechnoBaazar',
+    'seo_business_legal_name': '',
+    'seo_business_phone': '',
+    'seo_business_email': '',
+    'seo_business_street': '',
+    'seo_business_city': 'Karachi',
+    'seo_business_region': 'Sindh',
+    'seo_business_postal_code': '',
+    'seo_business_country': 'PK',
+    'seo_business_logo': '',
+    'seo_social_facebook': '',
+    'seo_social_instagram': '',
+    'seo_social_tiktok': '',
+    'seo_social_youtube': '',
+    'seo_social_x': '',
+    'seo_about_title': 'About | TechnoBaazar',
+    'seo_about_description': '',
+    'seo_cart_title': 'Shopping Cart | TechnoBaazar',
+    'seo_cart_description': '',
+    'seo_favorites_title': 'Your Favorites | TechnoBaazar',
+    'seo_favorites_description': '',
+    'seo_account_title': 'My Account | TechnoBaazar',
+    'seo_account_description': '',
 }
-SITE_CONTENT_URL_FIELDS = {'hero_cta_url', 'hero_image', 'seo_og_image'}
+SITE_CONTENT_URL_FIELDS = {'hero_cta_url', 'hero_image', 'seo_og_image', 'seo_business_logo', 'seo_social_facebook', 'seo_social_instagram', 'seo_social_tiktok', 'seo_social_youtube', 'seo_social_x'}
 SITE_CONTENT_STRUCTURED_FIELDS = {'benefits'}
 SITE_CONTENT_LIMITS = {key: 500 for key in SITE_CONTENT_DEFAULTS}
 SITE_CONTENT_LIMITS.update({'hero_subtitle': 500, 'featured_subtitle': 500, 'benefits': 4000,
@@ -104,7 +133,19 @@ SITE_CONTENT_LIMITS.update({'hero_subtitle': 500, 'featured_subtitle': 500, 'ben
                              'footer_admin_text': 40, 'footer_home_text': 60,
                              'seo_site_title': 200, 'seo_site_description': 500,
                              'seo_site_keywords': 500, 'seo_og_image': 2000,
-                             'seo_canonical_base': 500})
+                             'seo_canonical_base': 500, 'seo_robots_txt': 8000,
+                             'seo_google_verification': 200, 'seo_bing_verification': 200,
+                             'seo_google_analytics_id': 100, 'seo_google_tag_manager_id': 100,
+                             'seo_meta_pixel_id': 100, 'seo_business_name': 200,
+                             'seo_business_legal_name': 200, 'seo_business_phone': 40,
+                             'seo_business_email': 254, 'seo_business_street': 300,
+                             'seo_business_city': 120, 'seo_business_region': 120,
+                             'seo_business_postal_code': 24, 'seo_business_country': 2,
+                             'seo_business_logo': 2000,
+                             'seo_about_title': 200, 'seo_about_description': 500,
+                             'seo_cart_title': 200, 'seo_cart_description': 500,
+                             'seo_favorites_title': 200, 'seo_favorites_description': 500,
+                             'seo_account_title': 200, 'seo_account_description': 500})
 
 DELIVERY_CITIES_SEED = [
     ('karachi', 'Karachi', 350), ('lahore', 'Lahore', 350), ('islamabad', 'Islamabad', 350),
@@ -645,6 +686,14 @@ def create_app():
             value = value.strip() if key != 'benefits' else value.strip()
             if key in SITE_CONTENT_URL_FIELDS and value and not is_local_or_http_url(value):
                 return None
+            if key == 'seo_robots_txt' and any(ord(char) < 32 and char not in '\n\r\t' for char in value):
+                return None
+            if key == 'seo_google_analytics_id' and value and not re.fullmatch(r'G-[A-Z0-9]+', value):
+                return None
+            if key == 'seo_google_tag_manager_id' and value and not re.fullmatch(r'GTM-[A-Z0-9]+', value):
+                return None
+            if key == 'seo_meta_pixel_id' and value and not re.fullmatch(r'[0-9]{5,20}', value):
+                return None
             if key == 'benefits':
                 try:
                     benefits = json.loads(value) if value else []
@@ -867,6 +916,34 @@ def create_app():
     @app.get('/api/site-content')
     def public_site_content():
         return jsonify(read_published_site_content())
+
+    @app.get('/robots.txt')
+    def robots_txt():
+        content = read_published_site_content()
+        rules = (content.get('seo_robots_txt') or 'User-agent: *\nAllow: /').strip()
+        sitemap = f"{content.get('seo_canonical_base', '').rstrip('/')}/sitemap.xml" if content.get('seo_canonical_base', '').strip() else ''
+        if sitemap and not re.search(r'^\s*Sitemap:', rules, re.IGNORECASE | re.MULTILINE):
+            rules = f"{rules}\nSitemap: {sitemap}" if rules else f"Sitemap: {sitemap}"
+        return app.response_class(rules + ('\n' if rules else ''), mimetype='text/plain')
+
+    @app.get('/sitemap.xml')
+    def sitemap_xml():
+        from xml.etree.ElementTree import Element, SubElement, tostring
+        content = read_published_site_content()
+        base = content.get('seo_canonical_base', '').strip().rstrip('/')
+        if not base:
+            base = request.url_root.rstrip('/')
+        root = Element('urlset', {'xmlns': 'http://www.sitemaps.org/schemas/sitemap/0.9'})
+        urls = ['/', '/about']
+        categories = Category.query.filter_by(visible=True).order_by(Category.sort_order, Category.name).all()
+        urls.extend(f"/collections/{category.slug}" for category in categories)
+        products = Product.query.filter_by(active=True).order_by(Product.slug).all()
+        urls.extend(f"/products/{product.slug}" for product in products)
+        for path in urls:
+            loc = SubElement(root, 'url')
+            SubElement(loc, 'loc').text = f"{base}{path}"
+        xml = tostring(root, encoding='utf-8', xml_declaration=True)
+        return app.response_class(xml, mimetype='application/xml')
 
     @app.get('/api/store-settings')
     def public_store_settings():
@@ -1948,6 +2025,17 @@ def create_app():
         """Seed settings, cities, categories, and landing content (safe to rerun)."""
         ensure_store_defaults()
         print('Store settings, delivery cities, categories, and landing content are ready.')
+
+    @app.cli.command('verify-catalog')
+    def verify_catalog():
+        """Check that the complete starter catalog is present in the configured database."""
+        seed_file = Path(__file__).with_name('seed_products.json')
+        expected = len(json.loads(seed_file.read_text(encoding='utf-8')))
+        state = db.session.get(CatalogState, 1)
+        actual = Product.query.count()
+        if not state or not state.initialized or actual != expected:
+            raise SystemExit(f'Catalog verification failed: initialized={bool(state and state.initialized)}, found {actual} products, expected {expected}.')
+        print(f'Catalog verified: {actual}/{expected} products in {db.engine.url.get_backend_name()} database.')
 
     @app.cli.command('seed-catalog')
     def seed_catalog():
