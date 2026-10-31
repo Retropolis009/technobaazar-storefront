@@ -7,25 +7,35 @@ interface ProductCardProps {
   isFavorite: boolean
   onAddToCart: (product: Product) => void
   onToggleFavorite: (productName: string) => void
+  compact?: boolean
 }
 
-function ProductCard({ product, isFavorite, onAddToCart, onToggleFavorite }: ProductCardProps) {
+function ProductCard({ product, isFavorite, onAddToCart, onToggleFavorite, compact = false }: ProductCardProps) {
   const outOfStock = (product.trackStock ?? true) && (product.stockQuantity ?? 0) <= 0
   const discount = product.compareAtPrice != null && product.compareAtPrice > product.priceValue
     ? Math.round((product.compareAtPrice - product.priceValue) / product.compareAtPrice * 100)
     : 0
+  const mainImage = product.image || product.content?.gallery?.[0] || ''
+  const alternateImage = product.content?.gallery?.find(image => image && image !== mainImage)
 
   return (
     <article className="product-card group flex min-w-0 flex-col border border-[#e8eaee] bg-white transition duration-200 hover:border-[#c9d3e1] hover:shadow-[0_7px_20px_rgba(18,35,60,.09)]">
-      <div className="relative aspect-square overflow-hidden bg-white p-3 sm:p-4">
+      <div className={`relative ${compact ? 'aspect-[1.45/1]' : 'aspect-square'} overflow-hidden bg-white p-3 sm:p-4`}>
         <Link to={`/products/${product.slug}`} aria-label={`View ${product.name}`} className="block size-full">
           <img
-            src={product.image || PLACEHOLDER_IMAGE}
+            src={mainImage || PLACEHOLDER_IMAGE}
             alt={product.imageAlt || product.name}
             loading="lazy"
             onError={(event) => { event.currentTarget.src = PLACEHOLDER_IMAGE }}
-            className="size-full object-contain transition duration-300 group-hover:scale-[1.035]"
+            className={`size-full object-contain transition duration-300 group-hover:scale-[1.035] ${alternateImage ? 'group-hover:opacity-0 group-focus-within:opacity-0' : ''}`}
           />
+          {alternateImage && <img
+            src={alternateImage}
+            alt={`${product.imageAlt || product.name} alternate view`}
+            loading="lazy"
+            onError={(event) => { event.currentTarget.style.display = 'none' }}
+            className="pointer-events-none absolute inset-0 size-full object-contain p-3 opacity-0 transition duration-300 group-hover:opacity-100 group-focus-within:opacity-100 sm:p-4"
+          />}
         </Link>
         {product.badge && discount === 0 && <span className="absolute left-2.5 top-2.5 max-w-[calc(100%-3.5rem)] truncate bg-[#c91d45] px-2 py-1 text-[9px] font-bold text-white sm:left-3 sm:top-3">{product.badge}</span>}
         {discount > 0 && <span className="absolute left-2.5 top-2.5 bg-[#c91d45] px-2 py-1 text-[9px] font-bold text-white sm:left-3 sm:top-3">{discount}% Off</span>}

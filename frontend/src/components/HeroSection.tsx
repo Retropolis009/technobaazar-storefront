@@ -1,4 +1,4 @@
-import { ArrowRight, BadgeCheck, ShieldCheck, Truck } from 'lucide-react'
+import { ArrowRight, BadgeCheck, Truck } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { LandingContent } from '../content'
 
@@ -23,12 +23,6 @@ function HeroSection({ content, onSelectCategory }: HeroSectionProps) {
     }
   }
 
-  const assurances = [
-    { icon: Truck, title: content.benefits[0]?.title ?? 'Nationwide delivery', detail: content.benefits[0]?.detail ?? content.delivery_note },
-    { icon: ShieldCheck, title: content.benefits[1]?.title ?? 'Trusted products', detail: content.benefits[1]?.detail ?? 'Clear details, no surprises.' },
-    { icon: BadgeCheck, title: content.benefits[2]?.title ?? 'Local support', detail: content.benefits[2]?.detail ?? 'Help when you need it.' },
-  ]
-
   return (
     <section className="bg-white" aria-label="Nationwide delivery">
       <div className="delivery-hero relative isolate flex min-h-[370px] items-center overflow-hidden bg-[#05080e] sm:min-h-[440px] lg:min-h-[490px]">
@@ -52,15 +46,9 @@ function HeroSection({ content, onSelectCategory }: HeroSectionProps) {
         <div className="pointer-events-none absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-[#f4c62b] via-[#f4c62b]/45 to-transparent" aria-hidden="true" />
       </div>
 
-      <div className="mx-auto grid max-w-[1220px] border-b border-[#e4e6ea] bg-white px-4 sm:grid-cols-3 sm:px-6">
-        {assurances.map(({ icon: Icon, title, detail }, index) => <div key={`${title}-${index}`} className="flex items-center gap-3 border-b border-[#eff0f2] px-3 py-4 last:border-0 sm:border-b-0 sm:border-r sm:px-6 sm:py-5 sm:last:border-0">
-          <span className="grid size-10 shrink-0 place-items-center rounded-full border border-[#dfe2e7] text-[#1a2532]"><Icon size={19}/></span>
-          <span><strong className="block text-xs font-bold text-[#1d2733] sm:text-sm">{title}</strong><span className="mt-0.5 block text-[10px] leading-4 text-[#707984] sm:text-[11px]">{detail}</span></span>
-        </div>)}
-      </div>
-      <div className="delivery-ticker overflow-hidden bg-[#151719] py-2.5 text-[#f4c62b]" aria-label="Delivery and payment information">
+      <div className="delivery-ticker overflow-hidden bg-[#151719] py-2.5 text-[#f4c62b]" role="note" aria-label={content.hero_ticker_text}>
         <div className="delivery-ticker-track flex w-max items-center gap-10 whitespace-nowrap text-[9px] font-bold uppercase tracking-[0.18em] sm:text-[10px]">
-          {[0, 1, 2, 3].map(index => <span key={index} aria-hidden={index !== 0} className="inline-flex items-center gap-3"><Truck size={13}/>{content.delivery_note}<span className="text-white/45">•</span>{content.payment_note}<span className="text-white/45">•</span>Shop TechnoBaazar</span>)}
+          {[0, 1, 2, 3].map(index => <span key={index} aria-hidden={index !== 0} className="inline-flex items-center gap-3"><Truck size={13}/>{content.hero_ticker_text}</span>)}
         </div>
       </div>
     </section>

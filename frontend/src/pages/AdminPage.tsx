@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Boxes, CalendarRange, CircleDollarSign, ClipboardList, Copy, Download, Eye, FileImage, HardDrive, ImagePlus, Images, LayoutDashboard, LogOut, PackagePlus, PenLine, Plus, Search, Settings as SettingsIcon, ShieldCheck, ShoppingCart, Trash2, TrendingUp, Truck, X } from 'lucide-react'
+import { Boxes, CalendarRange, CircleDollarSign, ClipboardList, Copy, Download, Eye, FileImage, FileSpreadsheet, HardDrive, ImagePlus, Images, LayoutDashboard, LogOut, PackagePlus, PenLine, Plus, Search, Settings as SettingsIcon, ShieldCheck, ShoppingCart, Trash2, TrendingUp, Truck, X } from 'lucide-react'
 import { blankProductContent, type Product, type ProductContent } from '../catalog'
 import { DEFAULT_LANDING_CONTENT } from '../content'
 import { apiUrl, formatPKR, type AdminCoupon, type AdminSettings, type Category, type CategoryField, type ContentRevision, type DashboardStats, type MediaFile, type OrderSummary } from '../api'
@@ -247,7 +247,7 @@ function AdminPage({ products, onProductsChange }: Props) {
                 <Field label="Category" required><select required value={draft.category} onChange={event => setDraft({ ...draft, category: event.target.value })} className={`${inputClass} bg-white`}>{availableCategories.map(category => <option key={category.id} value={category.name}>{category.parentName ? `${category.parentName} / ${category.name}` : category.name}</option>)}</select></Field>
                 <Field label="Product URL slug" required hint={editing ? 'The published URL stays the same when editing this listing.' : 'Used in the product page URL.'}><input required readOnly={Boolean(editing)} maxLength={180} pattern="[A-Za-z0-9-]+" value={draft.slug} onChange={event => setDraft({ ...draft, slug: event.target.value })} className={`${inputClass} read-only:bg-[#f5f6f2] read-only:text-[#68736c]`}/></Field>
                 <Field label="Short detail line" hint="Displayed directly below the product name." ><input maxLength={300} value={draft.detail} onChange={event => setDraft({ ...draft, detail: event.target.value })} placeholder="Example: 16GB GDDR6 · Triple-fan cooling" className={inputClass}/></Field>
-                <Field label="Badge" hint="Optional label such as New arrival or Bestseller."><input maxLength={100} value={draft.badge} onChange={event => setDraft({ ...draft, badge: event.target.value })} className={inputClass}/></Field>
+                <Field label="Badge" hint="Use “New arrival”, “New listing”, or “Just landed” to include this product in the New Arrivals carousel."><input maxLength={100} value={draft.badge} onChange={event => setDraft({ ...draft, badge: event.target.value })} className={inputClass}/></Field>
               </div>
             </section>
 
@@ -481,7 +481,7 @@ function ProductContentModal({ product, onClose, onSaved, onError }: { product: 
   const [subtitle, setSubtitle] = useState(initial.subtitle)
   const [size, setSize] = useState(initial.size)
   const [intro, setIntro] = useState(initial.intro)
-  const [gallery, setGallery] = useState(initial.gallery.join('\n'))
+  const [gallery, setGallery] = useState<string[]>(initial.gallery.length ? initial.gallery.slice(0, 8) : [''])
   const [notes, setNotes] = useState<Array<{ label: string; value: string }>>(initial.notes.length ? initial.notes : [{ label: '', value: '' }])
   const [busy, setBusy] = useState(false)
 
@@ -493,7 +493,7 @@ function ProductContentModal({ product, onClose, onSaved, onError }: { product: 
         method: 'PUT',
         body: JSON.stringify({
           eyebrow, subtitle, size, intro,
-          gallery: gallery.split('\n').map(line => line.trim()).filter(Boolean),
+          gallery: gallery.map(line => line.trim()).filter(Boolean),
           notes: notes.filter(note => note.label.trim() || note.value.trim()),
         }),
       })
@@ -517,7 +517,11 @@ function ProductContentModal({ product, onClose, onSaved, onError }: { product: 
         <Field label="Subtitle" hint="Shown under the name instead of the short detail line."><input maxLength={500} value={subtitle} onChange={event => setSubtitle(event.target.value)} className={inputClass}/></Field>
         <Field label="Size / variant label" hint="Example: 1TB · ATX · 27-inch."><input maxLength={100} value={size} onChange={event => setSize(event.target.value)} className={inputClass}/></Field>
         <label className="block text-sm font-semibold">Intro highlight<span className="mt-1 block text-xs font-normal leading-5 text-[#68736c]">Highlighted box at the top of the product overview.</span><textarea maxLength={2000} rows={3} value={intro} onChange={event => setIntro(event.target.value)} placeholder="One or two sentences highlighted at the top of the overview." className="mt-2 w-full resize-y border border-[#cfd6ce] p-3 text-sm font-normal leading-6 outline-none focus:border-[#315ee8]"/></label>
-        <label className="block text-sm font-semibold">Gallery URLs <span className="font-normal text-[#9aa29b]">(one per line, up to 8)</span><textarea rows={4} value={gallery} onChange={event => setGallery(event.target.value)} placeholder="https://…/photo-2.jpg" className="mt-2 w-full resize-y border border-[#cfd6ce] p-3 text-sm font-normal leading-6 outline-none focus:border-[#315ee8]"/></label>
+        <div>
+          <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-semibold">Additional image links <span className="font-normal text-[#9aa29b]">(up to 8)</span></p><button type="button" disabled={gallery.length >= 8} onClick={() => setGallery(current => [...current, ''])} className="inline-flex h-9 items-center gap-2 border border-[#cfd6ce] px-3 text-xs font-semibold hover:border-[#315ee8] disabled:opacity-40"><Plus size={14}/>Add image link</button></div>
+          <p className="mt-1 text-xs leading-5 text-[#68736c]">Paste each extra product image URL into its own field. The first image remains the main listing image; additional images appear on hover and in the product gallery.</p>
+          <div className="mt-3 space-y-2">{gallery.map((url, index) => <div key={index} className="grid grid-cols-[minmax(0,1fr)_36px] gap-2"><input aria-label={`Additional product image URL ${index + 1}`} type="text" maxLength={2000} value={url} onChange={event => setGallery(current => current.map((item, i) => i === index ? event.target.value : item))} placeholder="https://example.com/product-angle.jpg or /api/media/..." className={inputClass}/><button type="button" disabled={gallery.length <= 1} onClick={() => setGallery(current => current.filter((_, i) => i !== index))} aria-label={`Remove image link ${index + 1}`} className="grid size-9 place-self-center text-[#68736c] hover:text-red-700 disabled:opacity-30"><Trash2 size={16}/></button></div>)}</div>
+        </div>
         <div>
           <div className="flex items-center justify-between"><p className="text-sm font-semibold">Info notes</p><button type="button" onClick={() => setNotes([...notes, { label: '', value: '' }])} className="inline-flex h-9 items-center gap-2 border border-[#cfd6ce] px-3 text-xs font-semibold hover:border-[#315ee8]"><Plus size={14}/>Add row</button></div>
           <div className="mt-3 space-y-2">{notes.map((note, index) => <div key={index} className="grid grid-cols-[minmax(95px,.6fr)_minmax(0,1.4fr)_36px] gap-2">
@@ -529,7 +533,7 @@ function ProductContentModal({ product, onClose, onSaved, onError }: { product: 
       </div>
       <div className="lg:sticky lg:top-5">
         <div className="mb-2 flex items-center justify-between"><p className="text-xs font-bold uppercase tracking-wider text-[#68736c]">Live preview</p><span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-[#68736c]"><Eye size={14}/>Preview only</span></div>
-        <ProductContentPreview product={product} eyebrow={eyebrow} subtitle={subtitle} size={size} intro={intro} gallery={gallery} notes={notes} />
+        <ProductContentPreview product={product} eyebrow={eyebrow} subtitle={subtitle} size={size} intro={intro} gallery={gallery.join('\n')} notes={notes} />
       </div>
       </div>
       <div className="mt-6 flex justify-end gap-3"><button type="button" onClick={onClose} className="h-11 border border-[#cfd6ce] px-5 text-sm font-semibold">Cancel</button><button disabled={busy} className="h-11 bg-[#142c24] px-6 text-sm font-semibold text-white hover:bg-[#315ee8] disabled:opacity-60">{busy ? 'Saving…' : 'Save page content'}</button></div>
@@ -601,16 +605,16 @@ function OrdersSection({ onError }: { onError: (message: string) => void }) {
     } catch (cause) { onError(cause instanceof Error ? cause.message : 'Could not delete the order.') }
     finally { setBusy(null) }
   }
-  async function exportCsv() {
+  async function exportOrders(format: 'csv' | 'xlsx') {
     try {
       const params = new URLSearchParams()
       if (search.trim()) params.set('search', search.trim())
       if (status) params.set('status', status)
       if (paymentStatus) params.set('payment_status', paymentStatus)
-      const response = await fetch(`${apiUrl}/api/admin/orders/export.csv?${params}`, { credentials: 'include' })
+      const response = await fetch(`${apiUrl}/api/admin/orders/export.${format}?${params}`, { credentials: 'include' })
       if (!response.ok) throw new Error('Export failed.')
       const blob = await response.blob(), link = document.createElement('a')
-      link.href = URL.createObjectURL(blob); link.download = 'technobaazar-orders.csv'; link.click()
+      link.href = URL.createObjectURL(blob); link.download = `technobaazar-orders.${format}`; link.click()
       URL.revokeObjectURL(link.href)
     } catch (cause) { onError(cause instanceof Error ? cause.message : 'Could not export orders.') }
   }
@@ -621,7 +625,7 @@ function OrdersSection({ onError }: { onError: (message: string) => void }) {
       <label className="flex h-11 items-center gap-2 border border-[#dfe4dc] px-3"><Search size={17} className="shrink-0 text-[#7a857d]"/><input aria-label="Search orders" value={search} onChange={event => setSearch(event.target.value)} placeholder="Order number, customer, phone, email" className="min-w-0 flex-1 outline-none"/></label>
       <select aria-label="Filter by status" value={status} onChange={event => setStatus(event.target.value)} className="h-11 border border-[#dfe4dc] bg-white px-3 text-sm"><option value="">All statuses</option>{orderStatuses.map(value => <option key={value} value={value}>{value}</option>)}</select>
       <select aria-label="Filter by payment" value={paymentStatus} onChange={event => setPaymentStatus(event.target.value)} className="h-11 border border-[#dfe4dc] bg-white px-3 text-sm"><option value="">All payments</option>{paymentStatuses.map(value => <option key={value} value={value}>{value.replaceAll('_', ' ')}</option>)}</select>
-      <div className="flex gap-2"><button className="h-11 flex-1 bg-[#142c24] px-4 text-sm font-semibold text-white hover:bg-[#315ee8]">Search</button><button type="button" onClick={() => void exportCsv()} title="Export CSV" aria-label="Export orders as CSV" className="grid h-11 w-11 shrink-0 place-items-center border border-[#cfd6ce] hover:border-[#315ee8]"><Download size={17}/></button></div>
+      <div className="flex gap-2"><button className="h-11 flex-1 bg-[#142c24] px-4 text-sm font-semibold text-white hover:bg-[#315ee8]">Search</button><button type="button" onClick={() => void exportOrders('xlsx')} title="Download Excel workbook" aria-label="Download orders as an Excel workbook" className="inline-flex h-11 shrink-0 items-center justify-center gap-1.5 border border-[#cfd6ce] px-2.5 text-xs font-semibold hover:border-[#315ee8] sm:px-3"><FileSpreadsheet size={16}/><span>Excel</span></button><button type="button" onClick={() => void exportOrders('csv')} title="Download CSV" aria-label="Download orders as CSV" className="grid h-11 w-11 shrink-0 place-items-center border border-[#cfd6ce] hover:border-[#315ee8]"><Download size={17}/></button></div>
     </form>
     <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-semibold">{total.toLocaleString('en-PK')} orders <span className="font-normal text-[#68736c]">· open an order for contact, delivery, items, and controls</span></p></div>
     <div className="space-y-3">
@@ -658,13 +662,15 @@ function DetailRow({ label, value, strong = false }: { label: string; value?: st
 // ----------------------------------------------------------------- content ---
 const CONTENT_GROUPS: Array<{ title: string; note: string; preview?: 'search-snippet'; fields: Array<{ key: string; label: string; multiline?: boolean; hint?: string }> }> = [
   { title: 'Announcement bar', note: 'The strip above the header.', fields: [{ key: 'announcement', label: 'Announcement text', hint: 'One short line, e.g. a sale or delivery promise.' }] },
+  { title: 'Animated hero ticker', note: 'The moving message directly below the homepage image.', fields: [{ key: 'hero_ticker_text', label: 'Ticker message', hint: 'This message repeats in the moving ticker under the hero.' }] },
   {
-    title: 'Hero', note: 'The big blue panel on the homepage.',
+    title: 'Hero', note: 'The black-and-gold delivery banner on the homepage.',
+
     fields: [
       { key: 'hero_eyebrow', label: 'Eyebrow badge', hint: 'Small label above the title.' },
       { key: 'hero_title_top', label: 'Title, first line', hint: 'Dark text, e.g. the main headline.' },
-      { key: 'hero_title_bottom', label: 'Title, second line (white)', hint: 'White text on the blue panel.' },
-      { key: 'hero_title_accent', label: 'Title accent (lime)', hint: 'Highlighted word or phrase shown in lime.' },
+      { key: 'hero_title_bottom', label: 'Title, second line (gold)', hint: 'Gold text on the dark delivery banner.' },
+      { key: 'hero_title_accent', label: 'Title accent (optional)', hint: 'Optional phrase shown beside the second line.' },
       { key: 'hero_subtitle', label: 'Subtitle', multiline: true, hint: 'One or two sentences under the title.' },
       { key: 'hero_cta_text', label: 'Button text', hint: 'Keep it short, e.g. “Shop now”.' },
       { key: 'hero_cta_url', label: 'Button link (path or URL)', hint: 'Where the button goes, e.g. /products or a full https:// link.' },
@@ -712,9 +718,12 @@ const CONTENT_GROUPS: Array<{ title: string; note: string; preview?: 'search-sni
     ],
   },
   {
-    title: 'Checkout & footer', note: 'Notes shown during checkout and in the footer.',
+    title: 'Checkout & footer', note: 'Payment terms, WhatsApp contact, and notes shown during checkout and in the footer.',
     fields: [
       { key: 'checkout_note', label: 'Checkout note', multiline: true, hint: 'Reminder shown on the checkout page.' },
+      { key: 'cod_terms', label: 'Cash on delivery terms', multiline: true, hint: 'Shown directly under the Cash on delivery option in checkout.' },
+      { key: 'bank_transfer_terms', label: 'Bank transfer terms', multiline: true, hint: 'Shown directly under the Bank transfer option in checkout.' },
+      { key: 'whatsapp_url', label: 'WhatsApp chat link', hint: 'Optional secure link such as https://wa.me/923001234567. The floating WhatsApp button is hidden when this is blank.' },
       { key: 'delivery_note', label: 'Delivery note', hint: 'Delivery promise shown near checkout.' },
       { key: 'payment_note', label: 'Payment note', multiline: true, hint: 'Explains the accepted payment methods.' },
       { key: 'order_confirmation_note', label: 'Order confirmation note', multiline: true, hint: 'Shown after an order is placed.' },
@@ -881,17 +890,19 @@ function LandingPreview({ values, benefits }: { values: Record<string, string>; 
       <p className="shrink-0 text-xs font-bold"><span className="text-[#315ee8]">{text('header_brand_prefix')}</span><span className="text-[#6aa84f]">{text('header_brand_accent')}</span></p>
       <span className="truncate rounded-full border border-[#cfd6ce] px-2 py-0.5 text-[10px] text-[#9aa29b]">{text('header_search_placeholder')}</span>
     </div>
-    <div className="bg-[#315ee8] px-3 py-4 text-white">
-      <p className="inline-block bg-[#c7f464] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#142c24]">{text('hero_eyebrow')}</p>
-      <p className="mt-2 text-sm font-bold leading-snug">{text('hero_title_top')} {text('hero_title_bottom')} <span className="text-[#c7f464]">{text('hero_title_accent')}</span></p>
-      <p className="mt-1 line-clamp-2 text-[10px] leading-4 text-white/85">{text('hero_subtitle')}</p>
-      <span className="mt-2 inline-block bg-white px-2 py-1 text-[10px] font-bold text-[#142c24]">{text('hero_cta_text')}</span>
-      <p className="mt-1.5 text-[9px] text-white/75">{text('hero_social_proof')}</p>
+    <div className="bg-[#05080e] px-3 py-4 text-white">
+      <p className="inline-block border border-[#f4c62b]/60 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#f4c62b]">{text('hero_eyebrow')}</p>
+      <p className="mt-2 text-sm font-bold leading-snug">{text('hero_title_top')} <span className="text-[#f4c62b]">{text('hero_title_bottom')} {text('hero_title_accent')}</span></p>
+      <p className="mt-1 line-clamp-2 text-[10px] leading-4 text-white/75">{text('hero_subtitle')}</p>
+      <span className="mt-2 inline-block bg-[#f4c62b] px-2 py-1 text-[10px] font-bold text-[#101418]">{text('hero_cta_text')}</span>
+      <p className="mt-1.5 text-[9px] text-white/65">{text('hero_social_proof')}</p>
     </div>
+    <div className="overflow-hidden bg-[#151719] px-3 py-2 text-[9px] font-bold uppercase tracking-[0.14em] text-[#f4c62b]"><p className="truncate">{text('hero_ticker_text')}</p></div>
     <div className="bg-[#f5f6f2] px-3 py-3">
       <p className="text-[9px] font-bold uppercase tracking-widest text-[#315ee8]">{text('departments_kicker')}</p>
       <p className="text-xs font-bold">{text('departments_title')}</p>
       <div className="mt-2 grid grid-cols-4 gap-1.5">{['GPUs', 'CPUs', 'Boards', 'RAM'].map(tile => <span key={tile} className="bg-white px-1 py-2 text-center text-[9px] font-semibold text-[#68736c]">{tile}</span>)}</div>
+      <div className="mt-3 border border-[#e2e4e7] bg-white p-2"><p className="text-[10px] font-bold">New Arrivals <span className="ml-1 font-normal text-[#68736c]">auto · arrows</span></p><div className="mt-1 grid grid-cols-2 gap-1"><span className="bg-[#f7f8f5] py-2 text-center text-[8px] text-[#9aa29b]">New product</span><span className="bg-[#f7f8f5] py-2 text-center text-[8px] text-[#9aa29b]">New product</span></div></div>
       <p className="mt-3 text-[9px] font-bold uppercase tracking-widest text-[#315ee8]">{text('featured_kicker')}</p>
       <p className="text-xs font-bold">{text('featured_title')}</p>
       <p className="line-clamp-2 text-[10px] leading-4 text-[#68736c]">{text('featured_subtitle')}</p>

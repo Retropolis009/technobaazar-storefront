@@ -1,6 +1,7 @@
 import DepartmentSection from '../components/DepartmentSection'
 import FeaturedProducts from '../components/FeaturedProducts'
 import HeroSection from '../components/HeroSection'
+import NewArrivalsCarousel from '../components/NewArrivalsCarousel'
 import ShoppingBenefits from '../components/ShoppingBenefits'
 import { type Department, type Product } from '../catalog'
 import type { LandingContent } from '../content'
@@ -31,6 +32,18 @@ function HomePage({
   return (
     <main id="top">
       <HeroSection content={content} onSelectCategory={onSelectCollection} />
+      <DepartmentSection
+        departments={departments}
+        kicker={content.departments_kicker}
+        title={content.departments_title}
+        onSelectCategory={onSelectCollection}
+      />
+      <NewArrivalsCarousel
+        products={products}
+        favorites={favorites}
+        onAddToCart={onAddToCart}
+        onToggleFavorite={onToggleFavorite}
+      />
       <FeaturedProducts
         favorites={favorites}
         products={products}
@@ -41,12 +54,6 @@ function HomePage({
         onAddToCart={onAddToCart}
         onClearFilters={onClearFilters}
         onToggleFavorite={onToggleFavorite}
-      />
-      <DepartmentSection
-        departments={departments}
-        kicker={content.departments_kicker}
-        title={content.departments_title}
-        onSelectCategory={onSelectCollection}
       />
       <ShoppingBenefits benefits={content.benefits} />
     </main>

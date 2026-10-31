@@ -6,7 +6,9 @@ import json
 import os
 import re
 import threading
+import zipfile
 from datetime import datetime, timedelta, timezone
+from xml.etree import ElementTree as ET
 from pathlib import Path
 from uuid import uuid4
 from urllib.parse import urlparse
@@ -51,6 +53,7 @@ _rate_buckets = {}
 # ---------------------------------------------------------------------------
 SITE_CONTENT_DEFAULTS = {
     'announcement': 'DELIVERY ACROSS PAKISTAN  •  CASH ON DELIVERY AVAILABLE',
+    'hero_ticker_text': 'DELIVERY ACROSS PAKISTAN  •  CASH ON DELIVERY AVAILABLE  •  BANK TRANSFER AVAILABLE',
     'hero_eyebrow': 'WE DELIVER ACROSS PAKISTAN',
     'hero_title_top': 'ALL OVER',
     'hero_title_bottom': 'PAKISTAN',
@@ -75,6 +78,9 @@ SITE_CONTENT_DEFAULTS = {
         {'title': 'Clear product details', 'detail': 'Compare specs and availability before ordering.'},
     ]),
     'checkout_note': 'Cash on delivery is available. Final stock and prices are confirmed by the store.',
+    'cod_terms': 'Please have the order total ready when delivery arrives. The store will contact you to confirm your order before dispatch.',
+    'bank_transfer_terms': 'Bank details will be shared after your order is confirmed. Orders are dispatched after the transfer is verified.',
+    'whatsapp_url': '',
     'delivery_note': 'Delivery across Pakistan.',
     'payment_note': 'Cash on delivery and bank transfer are available.',
     'order_confirmation_note': 'After your order, our team contacts you to confirm delivery.',
@@ -183,11 +189,13 @@ PRIOR_SITE_CONTENT_DEFAULTS = {
     'seo_site_keywords': 'computer store pakistan, computer components, gaming pc, laptops, graphics cards, processors, monitors, technobaazar',
     'seo_og_image': 'https://images.unsplash.com/photo-1593305841991-05c297ba4575?auto=format&fit=crop&w=1200&q=80',
 }
-SITE_CONTENT_URL_FIELDS = {'hero_cta_url', 'hero_image', 'seo_og_image', 'seo_business_logo', 'seo_social_facebook', 'seo_social_instagram', 'seo_social_tiktok', 'seo_social_youtube', 'seo_social_x'}
+SITE_CONTENT_URL_FIELDS = {'hero_cta_url', 'hero_image', 'seo_og_image', 'seo_business_logo', 'seo_social_facebook', 'seo_social_instagram', 'seo_social_tiktok', 'seo_social_youtube', 'seo_social_x', 'whatsapp_url'}
 SITE_CONTENT_STRUCTURED_FIELDS = {'benefits'}
 SITE_CONTENT_LIMITS = {key: 500 for key in SITE_CONTENT_DEFAULTS}
 SITE_CONTENT_LIMITS.update({'hero_subtitle': 500, 'featured_subtitle': 500, 'benefits': 4000,
-                             'checkout_note': 500, 'delivery_note': 300, 'payment_note': 500,
+                             'hero_ticker_text': 500, 'checkout_note': 500, 'cod_terms': 2000,
+                             'bank_transfer_terms': 2000, 'whatsapp_url': 1000,
+                             'delivery_note': 300, 'payment_note': 500,
                              'order_confirmation_note': 500, 'footer_tagline': 300,
                              'hero_image': 2000, 'hero_image_alt': 300, 'hero_cta_url': 1000,
                              'header_brand_prefix': 40, 'header_brand_accent': 40, 'header_tagline': 60,
@@ -780,6 +788,11 @@ def create_app():
             value = value.strip() if key != 'benefits' else value.strip()
             if key in SITE_CONTENT_URL_FIELDS and value and not is_local_or_http_url(value):
                 return None
+            if key == 'whatsapp_url' and value:
+                parsed_whatsapp = urlparse(value)
+                whatsapp_hosts = {'wa.me', 'api.whatsapp.com', 'web.whatsapp.com', 'whatsapp.com', 'www.whatsapp.com', 'chat.whatsapp.com'}
+                if parsed_whatsapp.scheme != 'https' or (parsed_whatsapp.hostname or '').lower() not in whatsapp_hosts:
+                    return None
             if key == 'seo_robots_txt' and any(ord(char) < 32 and char not in '\n\r\t' for char in value):
                 return None
             if key == 'seo_google_analytics_id' and value and not re.fullmatch(r'G-[A-Z0-9]+', value):
@@ -1514,6 +1527,110 @@ def create_app():
                              order.subtotal, order.discount_amount, order.shipping, order.total])
         response = app.response_class(output.getvalue(), mimetype='text/csv')
         response.headers['Content-Disposition'] = 'attachment; filename=technobaazar-orders.csv'
+        return response
+
+    @app.get('/api/admin/orders/export.xlsx')
+    def admin_orders_export_xlsx():
+        denied = require_admin()
+        if denied:
+            return denied
+        query, error = filtered_orders(request.args)
+        if error:
+            return jsonify({'error': error}), 400
+        orders = query.order_by(Order.created_at.desc()).limit(5000).all()
+        headers = [
+            'Order', 'Date', 'Customer', 'Phone', 'Email', 'City', 'Address', 'Postal code',
+            'Delivery instructions', 'Status', 'Payment method', 'Payment status', 'Items',
+            'Subtotal (PKR)', 'Discount (PKR)', 'Coupon', 'Shipping (PKR)', 'Total (PKR)',
+        ]
+        rows = [headers]
+        for order in orders:
+            item_summary = '; '.join(
+                f'{item.product_name} x{item.quantity} @ PKR {item.unit_price:,}'
+                for item in order.items
+            )
+            rows.append([
+                order.order_number, order.created_at.isoformat(), order.customer_name, order.phone,
+                order.email, order.city, order.address, order.postal_code, order.note, order.status,
+                order.payment_method, order.payment_status, item_summary, order.subtotal,
+                order.discount_amount, order.coupon_code, order.shipping, order.total,
+            ])
+
+        main_ns = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'
+        office_rel_ns = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
+        package_rel_ns = 'http://schemas.openxmlformats.org/package/2006/relationships'
+        content_types_ns = 'http://schemas.openxmlformats.org/package/2006/content-types'
+        xml_ns = 'http://www.w3.org/XML/1998/namespace'
+        def column_name(number):
+            name = ''
+            while number:
+                number, remainder = divmod(number - 1, 26)
+                name = chr(65 + remainder) + name
+            return name
+
+        worksheet = ET.Element(f'{{{main_ns}}}worksheet')
+        sheet_data = ET.SubElement(worksheet, f'{{{main_ns}}}sheetData')
+        for row_number, values in enumerate(rows, start=1):
+            row_element = ET.SubElement(sheet_data, f'{{{main_ns}}}row', {'r': str(row_number)})
+            for column_number, value in enumerate(values, start=1):
+                address = f'{column_name(column_number)}{row_number}'
+                cell = ET.SubElement(row_element, f'{{{main_ns}}}c', {'r': address})
+                if isinstance(value, (int, float)) and not isinstance(value, bool):
+                    cell.set('t', 'n')
+                    ET.SubElement(cell, f'{{{main_ns}}}v').text = str(value)
+                else:
+                    cell.set('t', 'inlineStr')
+                    inline = ET.SubElement(cell, f'{{{main_ns}}}is')
+                    text = ET.SubElement(inline, f'{{{main_ns}}}t')
+                    text.text = '' if value is None else str(value)
+                    if text.text[:1].isspace() or text.text[-1:].isspace():
+                        text.set(f'{{{xml_ns}}}space', 'preserve')
+
+        workbook = ET.Element(f'{{{main_ns}}}workbook')
+        sheets = ET.SubElement(workbook, f'{{{main_ns}}}sheets')
+        ET.SubElement(sheets, f'{{{main_ns}}}sheet', {
+            'name': 'Orders', 'sheetId': '1', f'{{{office_rel_ns}}}id': 'rId1',
+        })
+        workbook_rels = ET.Element(f'{{{package_rel_ns}}}Relationships')
+        ET.SubElement(workbook_rels, f'{{{package_rel_ns}}}Relationship', {
+            'Id': 'rId1',
+            'Type': 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet',
+            'Target': 'worksheets/sheet1.xml',
+        })
+        root_rels = ET.Element(f'{{{package_rel_ns}}}Relationships')
+        ET.SubElement(root_rels, f'{{{package_rel_ns}}}Relationship', {
+            'Id': 'rId1',
+            'Type': 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument',
+            'Target': 'xl/workbook.xml',
+        })
+        content_types = ET.Element(f'{{{content_types_ns}}}Types')
+        ET.SubElement(content_types, f'{{{content_types_ns}}}Default', {
+            'Extension': 'rels', 'ContentType': 'application/vnd.openxmlformats-package.relationships+xml',
+        })
+        ET.SubElement(content_types, f'{{{content_types_ns}}}Default', {
+            'Extension': 'xml', 'ContentType': 'application/xml',
+        })
+        ET.SubElement(content_types, f'{{{content_types_ns}}}Override', {
+            'PartName': '/xl/workbook.xml',
+            'ContentType': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml',
+        })
+        ET.SubElement(content_types, f'{{{content_types_ns}}}Override', {
+            'PartName': '/xl/worksheets/sheet1.xml',
+            'ContentType': 'application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml',
+        })
+
+        output = io.BytesIO()
+        with zipfile.ZipFile(output, 'w', compression=zipfile.ZIP_DEFLATED) as workbook_file:
+            workbook_file.writestr('[Content_Types].xml', ET.tostring(content_types, encoding='utf-8', xml_declaration=True))
+            workbook_file.writestr('_rels/.rels', ET.tostring(root_rels, encoding='utf-8', xml_declaration=True))
+            workbook_file.writestr('xl/workbook.xml', ET.tostring(workbook, encoding='utf-8', xml_declaration=True))
+            workbook_file.writestr('xl/_rels/workbook.xml.rels', ET.tostring(workbook_rels, encoding='utf-8', xml_declaration=True))
+            workbook_file.writestr('xl/worksheets/sheet1.xml', ET.tostring(worksheet, encoding='utf-8', xml_declaration=True))
+        response = app.response_class(
+            output.getvalue(),
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+        response.headers['Content-Disposition'] = 'attachment; filename=technobaazar-orders.xlsx'
         return response
 
     @app.patch('/api/admin/orders/<order_number>')

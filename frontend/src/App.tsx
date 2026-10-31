@@ -13,6 +13,7 @@ import SeoHead from './components/SeoHead'
 import SiteFooter from './components/SiteFooter'
 import SiteHeader from './components/SiteHeader'
 import ToastNotice from './components/ToastNotice'
+import WhatsAppButton from './components/WhatsAppButton'
 import { apiRequest, type CartLine, type Category, type Customer, type OrderSummary, type StoreSettings } from './api'
 import { DEFAULT_LANDING_CONTENT, normalizeLandingContent, type LandingContent } from './content'
 import {
@@ -430,6 +431,8 @@ function App() {
               customer={customer}
               settings={settings}
               checkoutNote={content.checkout_note}
+              codTerms={content.cod_terms}
+              bankTransferTerms={content.bank_transfer_terms}
               paymentNote={content.payment_note}
               confirmationNote={content.order_confirmation_note}
               onOrderPlaced={handleOrderPlaced}
@@ -448,6 +451,8 @@ function App() {
               customer={customer}
               settings={settings}
               checkoutNote={content.checkout_note}
+              codTerms={content.cod_terms}
+              bankTransferTerms={content.bank_transfer_terms}
               paymentNote={content.payment_note}
               confirmationNote={content.order_confirmation_note}
               onOrderPlaced={handleOrderPlaced}
@@ -459,6 +464,7 @@ function App() {
       </Routes>
       {!isAdminRoute && !isCheckoutRoute && <SiteFooter content={content} />}
       {!isAdminRoute && <ToastNotice message={notice} onDismiss={() => setNotice('')} />}
+      {!isAdminRoute && <WhatsAppButton url={content.whatsapp_url} />}
     </div>
   )
 }

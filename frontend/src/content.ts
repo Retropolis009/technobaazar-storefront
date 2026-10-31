@@ -3,6 +3,7 @@ import type { Benefit } from './api'
 /** Landing-page content served by the backend CMS (GET /api/site-content). */
 export interface LandingContent {
   announcement: string
+  hero_ticker_text: string
   hero_eyebrow: string
   hero_title_top: string
   hero_title_bottom: string
@@ -23,6 +24,9 @@ export interface LandingContent {
   featured_subtitle: string
   benefits: Benefit[]
   checkout_note: string
+  cod_terms: string
+  bank_transfer_terms: string
+  whatsapp_url: string
   delivery_note: string
   payment_note: string
   order_confirmation_note: string
@@ -45,6 +49,7 @@ export interface LandingContent {
 
 export const DEFAULT_LANDING_CONTENT: LandingContent = {
   announcement: 'DELIVERY ACROSS PAKISTAN  •  CASH ON DELIVERY AVAILABLE',
+  hero_ticker_text: 'DELIVERY ACROSS PAKISTAN  •  CASH ON DELIVERY AVAILABLE  •  BANK TRANSFER AVAILABLE',
   hero_eyebrow: 'WE DELIVER ACROSS PAKISTAN',
   hero_title_top: 'ALL OVER',
   hero_title_bottom: 'PAKISTAN',
@@ -69,6 +74,9 @@ export const DEFAULT_LANDING_CONTENT: LandingContent = {
     { title: 'Clear product details', detail: 'Compare specs and availability before ordering.' },
   ],
   checkout_note: 'Cash on delivery is available. Final stock and prices are confirmed by the store.',
+  cod_terms: 'Please have the order total ready when delivery arrives. The store will contact you to confirm your order before dispatch.',
+  bank_transfer_terms: 'Bank details will be shared after your order is confirmed. Orders are dispatched after the transfer is verified.',
+  whatsapp_url: '',
   delivery_note: 'Delivery across Pakistan.',
   payment_note: 'Cash on delivery and bank transfer are available.',
   order_confirmation_note: 'After your order, our team contacts you to confirm delivery.',
