@@ -153,6 +153,15 @@ a:focus-visible {
   animation-play-state: paused;
 }
 
+.new-arrivals-track {
+  scrollbar-width: none;
+  scroll-snap-type: x mandatory;
+}
+
+.new-arrivals-track::-webkit-scrollbar {
+  display: none;
+}
+
 .section-kicker {
   margin-bottom: 7px;
   color: #315ee8;
