@@ -24,6 +24,7 @@ function ProductCard({ product, isFavorite, onAddToCart, onToggleFavorite, compa
         <Link to={`/products/${product.slug}`} aria-label={`View ${product.name}`} className="block size-full">
           <img
             src={mainImage || PLACEHOLDER_IMAGE}
+            data-product-primary-image="true"
             alt={product.imageAlt || product.name}
             loading="lazy"
             onError={(event) => { event.currentTarget.src = PLACEHOLDER_IMAGE }}
@@ -33,7 +34,11 @@ function ProductCard({ product, isFavorite, onAddToCart, onToggleFavorite, compa
             src={alternateImage}
             alt={`${product.imageAlt || product.name} alternate view`}
             loading="lazy"
-            onError={(event) => { event.currentTarget.style.display = 'none' }}
+            onError={(event) => {
+              event.currentTarget.style.display = 'none'
+              const primaryImage = event.currentTarget.parentElement?.querySelector<HTMLImageElement>('[data-product-primary-image]')
+              if (primaryImage) primaryImage.style.opacity = '1'
+            }}
             className="pointer-events-none absolute inset-0 size-full object-contain p-3 opacity-0 transition duration-300 group-hover:opacity-100 group-focus-within:opacity-100 sm:p-4"
           />}
         </Link>
