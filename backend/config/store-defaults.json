@@ -1,0 +1,800 @@
+{
+  "SITE_CONTENT_DEFAULTS": {
+    "announcement": "DELIVERY ACROSS PAKISTAN  •  CASH ON DELIVERY AVAILABLE",
+    "hero_ticker_text": "DELIVERY ACROSS PAKISTAN  •  CASH ON DELIVERY AVAILABLE  •  BANK TRANSFER AVAILABLE",
+    "hero_eyebrow": "WE DELIVER ACROSS PAKISTAN",
+    "hero_title_top": "ALL OVER",
+    "hero_title_bottom": "PAKISTAN",
+    "hero_title_accent": "",
+    "hero_subtitle": "Order computer components, laptops, and everyday tech online. Explore the TechnoBaazar catalog and get your gear delivered across Pakistan.",
+    "hero_cta_text": "Shop computer gear",
+    "hero_cta_url": "/collections/all-gear",
+    "hero_social_proof": "Browse current products with clear pricing and availability.",
+    "hero_image": "/images/pakistan-delivery-hero.jpg",
+    "hero_image_alt": "Gold delivery routes across Pakistan alongside computer hardware",
+    "hero_card_kicker": "TECHNOBAAZAR STORE",
+    "hero_card_title": "Computer gear, delivered.",
+    "hero_badge": "SHOP THE CATALOG",
+    "departments_kicker": "Explore the store",
+    "departments_title": "Shop by category",
+    "featured_kicker": "From the catalog",
+    "featured_title": "Find your next upgrade.",
+    "featured_subtitle": "Explore computer components, laptops, and accessories currently listed by TechnoBaazar.",
+    "benefits": "[{\"title\": \"Across Pakistan\", \"detail\": \"Carefully packed delivery to your door.\"}, {\"title\": \"Easy ways to pay\", \"detail\": \"Cash on delivery and bank transfer.\"}, {\"title\": \"Clear product details\", \"detail\": \"Compare specs and availability before ordering.\"}]",
+    "checkout_note": "Cash on delivery is available. Final stock and prices are confirmed by the store.",
+    "cod_terms": "Please have the order total ready when delivery arrives. The store will contact you to confirm your order before dispatch.",
+    "bank_transfer_terms": "Bank details will be shared after your order is confirmed. Orders are dispatched after the transfer is verified.",
+    "whatsapp_url": "",
+    "delivery_note": "Delivery across Pakistan.",
+    "payment_note": "Cash on delivery and bank transfer are available.",
+    "order_confirmation_note": "After your order, our team contacts you to confirm delivery.",
+    "header_brand_prefix": "TECHNO",
+    "header_brand_accent": "BAAZAR",
+    "header_tagline": "COMPUTERS & TECH",
+    "header_search_placeholder": "Search products, brands, and categories...",
+    "header_mobile_search_placeholder": "Search products and brands",
+    "header_about_text": "Why TechnoBaazar",
+    "footer_brand_text": "TECHNOBAAZAR",
+    "footer_tagline": "Good gear for whatever you’re building.",
+    "footer_admin_text": "Admin",
+    "footer_home_text": "Back to home",
+    "seo_site_title": "Computer Parts & Laptops Online in Pakistan | TechnoBaazar",
+    "seo_site_description": "Shop PC components, laptops, monitors, and accessories at TechnoBaazar. Compare specs, prices, and availability, with delivery across Pakistan.",
+    "seo_site_keywords": "computer parts Pakistan, laptops online Pakistan, computer accessories, processors, graphics cards, monitors, TechnoBaazar",
+    "seo_og_image": "/images/pakistan-delivery-hero.jpg",
+    "seo_canonical_base": "",
+    "seo_google_verification": "",
+    "seo_bing_verification": "",
+    "seo_google_analytics_id": "",
+    "seo_google_tag_manager_id": "",
+    "seo_meta_pixel_id": "",
+    "seo_robots_txt": "User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /cart\nDisallow: /checkout\nDisallow: /account\nDisallow: /favorites",
+    "seo_business_name": "TechnoBaazar",
+    "seo_business_legal_name": "",
+    "seo_business_phone": "",
+    "seo_business_email": "",
+    "seo_business_street": "",
+    "seo_business_city": "Karachi",
+    "seo_business_region": "Sindh",
+    "seo_business_postal_code": "",
+    "seo_business_country": "PK",
+    "seo_business_logo": "",
+    "seo_social_facebook": "",
+    "seo_social_instagram": "",
+    "seo_social_tiktok": "",
+    "seo_social_youtube": "",
+    "seo_social_x": "",
+    "seo_twitter_handle": "",
+    "seo_about_title": "About | TechnoBaazar",
+    "seo_about_description": "",
+    "seo_cart_title": "Shopping Cart | TechnoBaazar",
+    "seo_cart_description": "",
+    "seo_favorites_title": "Your Favorites | TechnoBaazar",
+    "seo_favorites_description": "",
+    "seo_account_title": "My Account | TechnoBaazar",
+    "seo_account_description": ""
+  },
+  "LEGACY_SITE_CONTENT_DEFAULTS": {
+    "hero_eyebrow": "THE NEXT BUILD STARTS HERE",
+    "hero_title_top": "Make your",
+    "hero_title_bottom": "setup",
+    "hero_title_accent": "unstoppable.",
+    "hero_subtitle": "From your first build to your next big upgrade, find the gear that keeps up with you.",
+    "hero_cta_text": "Explore All Gear",
+    "hero_social_proof": "Picked by people who know their specs.",
+    "hero_card_kicker": "YOUR NEXT UPGRADE",
+    "hero_card_title": "Starts with one part.",
+    "hero_badge": "BUILD YOUR WAY",
+    "departments_kicker": "Find your frequency",
+    "departments_title": "Shop by department",
+    "featured_kicker": "The good stuff",
+    "featured_title": "Worth a closer look.",
+    "featured_subtitle": "Hand-picked tech for work, play, and everything between.",
+    "header_tagline": "SUPPLY CO.",
+    "header_search_placeholder": "Search laptops, components, gear...",
+    "header_mobile_search_placeholder": "Search the store",
+    "seo_site_title": "TechnoBaazar — Computer Store in Pakistan",
+    "seo_site_description": "Shop graphics cards, processors, laptops, and gaming gear online in Pakistan with nationwide delivery and local warranty.",
+    "seo_site_keywords": "computer store pakistan, gaming pc, graphics cards, laptops, processors, technobaazar",
+    "seo_robots_txt": "User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /cart\nDisallow: /account\nDisallow: /favorites"
+  },
+  "PRIOR_SITE_CONTENT_DEFAULTS": {
+    "announcement": "GOOD GEAR, DELIVERED NATIONWIDE",
+    "hero_eyebrow": "PC PARTS, LAPTOPS & MORE",
+    "hero_title_top": "Build your",
+    "hero_title_bottom": "next",
+    "hero_title_accent": "great setup.",
+    "hero_subtitle": "Explore computer components, laptops, gaming gear, and everyday tech. Compare specifications and find what fits your setup.",
+    "hero_cta_text": "Shop the catalog",
+    "hero_social_proof": "Browse the current catalog and compare your options.",
+    "hero_image": "https://images.unsplash.com/photo-1593305841991-05c297ba4575?auto=format&fit=crop&w=1400&q=90",
+    "hero_image_alt": "A high-performance gaming PC setup with illuminated components",
+    "hero_card_title": "Parts for every setup.",
+    "hero_badge": "SHOP BY CATEGORY",
+    "departments_kicker": "Browse the store",
+    "featured_kicker": "Featured products",
+    "featured_title": "Find the right gear for your setup.",
+    "featured_subtitle": "Compare current computer components, laptops, and accessories from the store catalog.",
+    "benefits": "[{\"title\": \"Across Pakistan\", \"detail\": \"Carefully packed, right to your door.\"}, {\"title\": \"Gear you can trust\", \"detail\": \"Authentic products with local warranty.\"}, {\"title\": \"Real human help\", \"detail\": \"Get advice before you hit checkout.\"}]",
+    "checkout_note": "Cash on delivery available. Final stock and prices are confirmed by the store.",
+    "delivery_note": "Nationwide delivery across Pakistan.",
+    "payment_note": "Pay cash on delivery, or transfer to the account shared after checkout.",
+    "order_confirmation_note": "After your order, our team contacts you by phone or WhatsApp to confirm delivery.",
+    "seo_site_title": "TechnoBaazar | Computer Parts, Laptops & Gaming PCs in Pakistan",
+    "seo_site_description": "Shop computer components, gaming PCs, laptops, and accessories at TechnoBaazar. Compare specifications and prices, with nationwide delivery across Pakistan.",
+    "seo_site_keywords": "computer store pakistan, computer components, gaming pc, laptops, graphics cards, processors, monitors, technobaazar",
+    "seo_og_image": "https://images.unsplash.com/photo-1593305841991-05c297ba4575?auto=format&fit=crop&w=1200&q=80"
+  },
+  "SITE_CONTENT_URL_FIELDS": [
+    "hero_cta_url",
+    "hero_image",
+    "seo_business_logo",
+    "seo_og_image",
+    "seo_social_facebook",
+    "seo_social_instagram",
+    "seo_social_tiktok",
+    "seo_social_x",
+    "seo_social_youtube",
+    "whatsapp_url"
+  ],
+  "SITE_CONTENT_LIMITS": {
+    "announcement": 500,
+    "hero_ticker_text": 500,
+    "hero_eyebrow": 500,
+    "hero_title_top": 500,
+    "hero_title_bottom": 500,
+    "hero_title_accent": 500,
+    "hero_subtitle": 500,
+    "hero_cta_text": 500,
+    "hero_cta_url": 1000,
+    "hero_social_proof": 500,
+    "hero_image": 2000,
+    "hero_image_alt": 300,
+    "hero_card_kicker": 500,
+    "hero_card_title": 500,
+    "hero_badge": 500,
+    "departments_kicker": 500,
+    "departments_title": 500,
+    "featured_kicker": 500,
+    "featured_title": 500,
+    "featured_subtitle": 500,
+    "benefits": 4000,
+    "checkout_note": 500,
+    "cod_terms": 2000,
+    "bank_transfer_terms": 2000,
+    "whatsapp_url": 1000,
+    "delivery_note": 300,
+    "payment_note": 500,
+    "order_confirmation_note": 500,
+    "header_brand_prefix": 40,
+    "header_brand_accent": 40,
+    "header_tagline": 60,
+    "header_search_placeholder": 120,
+    "header_mobile_search_placeholder": 120,
+    "header_about_text": 60,
+    "footer_brand_text": 60,
+    "footer_tagline": 300,
+    "footer_admin_text": 40,
+    "footer_home_text": 60,
+    "seo_site_title": 200,
+    "seo_site_description": 500,
+    "seo_site_keywords": 500,
+    "seo_og_image": 2000,
+    "seo_canonical_base": 500,
+    "seo_google_verification": 200,
+    "seo_bing_verification": 200,
+    "seo_google_analytics_id": 100,
+    "seo_google_tag_manager_id": 100,
+    "seo_meta_pixel_id": 100,
+    "seo_robots_txt": 8000,
+    "seo_business_name": 200,
+    "seo_business_legal_name": 200,
+    "seo_business_phone": 40,
+    "seo_business_email": 254,
+    "seo_business_street": 300,
+    "seo_business_city": 120,
+    "seo_business_region": 120,
+    "seo_business_postal_code": 24,
+    "seo_business_country": 2,
+    "seo_business_logo": 2000,
+    "seo_social_facebook": 500,
+    "seo_social_instagram": 500,
+    "seo_social_tiktok": 500,
+    "seo_social_youtube": 500,
+    "seo_social_x": 500,
+    "seo_twitter_handle": 60,
+    "seo_about_title": 200,
+    "seo_about_description": 500,
+    "seo_cart_title": 200,
+    "seo_cart_description": 500,
+    "seo_favorites_title": 200,
+    "seo_favorites_description": 500,
+    "seo_account_title": 200,
+    "seo_account_description": 500
+  },
+  "DELIVERY_CITIES_SEED": [
+    [
+      "karachi",
+      "Karachi",
+      350
+    ],
+    [
+      "lahore",
+      "Lahore",
+      350
+    ],
+    [
+      "islamabad",
+      "Islamabad",
+      350
+    ],
+    [
+      "rawalpindi",
+      "Rawalpindi",
+      350
+    ],
+    [
+      "faisalabad",
+      "Faisalabad",
+      350
+    ],
+    [
+      "multan",
+      "Multan",
+      350
+    ],
+    [
+      "peshawar",
+      "Peshawar",
+      350
+    ],
+    [
+      "quetta",
+      "Quetta",
+      350
+    ],
+    [
+      "hyderabad",
+      "Hyderabad",
+      350
+    ],
+    [
+      "gujranwala",
+      "Gujranwala",
+      350
+    ],
+    [
+      "sialkot",
+      "Sialkot",
+      350
+    ],
+    [
+      "bahawalpur",
+      "Bahawalpur",
+      350
+    ],
+    [
+      "sargodha",
+      "Sargodha",
+      350
+    ],
+    [
+      "sukkur",
+      "Sukkur",
+      350
+    ],
+    [
+      "abbottabad",
+      "Abbottabad",
+      400
+    ],
+    [
+      "mardan",
+      "Mardan",
+      400
+    ],
+    [
+      "gujrat",
+      "Gujrat",
+      400
+    ],
+    [
+      "sahiwal",
+      "Sahiwal",
+      400
+    ],
+    [
+      "okara",
+      "Okara",
+      400
+    ],
+    [
+      "wah-cantt",
+      "Wah Cantt",
+      400
+    ],
+    [
+      "jhelum",
+      "Jhelum",
+      400
+    ],
+    [
+      "mirpur",
+      "Mirpur",
+      450
+    ],
+    [
+      "gilgit",
+      "Gilgit",
+      500
+    ],
+    [
+      "muzaffarabad",
+      "Muzaffarabad",
+      500
+    ],
+    [
+      "larkana",
+      "Larkana",
+      400
+    ],
+    [
+      "sheikhupura",
+      "Sheikhupura",
+      400
+    ],
+    [
+      "rahim-yar-khan",
+      "Rahim Yar Khan",
+      400
+    ],
+    [
+      "jhang",
+      "Jhang",
+      400
+    ],
+    [
+      "dera-ghazi-khan",
+      "Dera Ghazi Khan",
+      400
+    ],
+    [
+      "kasur",
+      "Kasur",
+      400
+    ],
+    [
+      "nawabshah",
+      "Nawabshah",
+      400
+    ],
+    [
+      "mirpur-khas",
+      "Mirpur Khas",
+      400
+    ],
+    [
+      "khairpur",
+      "Khairpur",
+      400
+    ],
+    [
+      "turbat",
+      "Turbat",
+      500
+    ],
+    [
+      "gwadar",
+      "Gwadar",
+      500
+    ],
+    [
+      "mingora",
+      "Mingora",
+      450
+    ],
+    [
+      "skardu",
+      "Skardu",
+      500
+    ],
+    [
+      "hunza",
+      "Hunza",
+      500
+    ],
+    [
+      "dera-ismail-khan",
+      "Dera Ismail Khan",
+      450
+    ],
+    [
+      "kohat",
+      "Kohat",
+      450
+    ],
+    [
+      "nowshera",
+      "Nowshera",
+      400
+    ],
+    [
+      "mansehra",
+      "Mansehra",
+      450
+    ],
+    [
+      "chiniot",
+      "Chiniot",
+      400
+    ],
+    [
+      "tando-adam",
+      "Tando Adam",
+      400
+    ],
+    [
+      "bahawalnagar",
+      "Bahawalnagar",
+      400
+    ],
+    [
+      "burewala",
+      "Burewala",
+      400
+    ],
+    [
+      "vehari",
+      "Vehari",
+      400
+    ],
+    [
+      "attock",
+      "Attock",
+      400
+    ],
+    [
+      "chakwal",
+      "Chakwal",
+      400
+    ],
+    [
+      "hafizabad",
+      "Hafizabad",
+      400
+    ],
+    [
+      "mandi-bahauddin",
+      "Mandi Bahauddin",
+      400
+    ],
+    [
+      "pakpattan",
+      "Pakpattan",
+      400
+    ],
+    [
+      "tando-allahyar",
+      "Tando Allahyar",
+      400
+    ],
+    [
+      "umerkot",
+      "Umerkot",
+      450
+    ],
+    [
+      "jacobabad",
+      "Jacobabad",
+      450
+    ],
+    [
+      "shikarpur",
+      "Shikarpur",
+      450
+    ]
+  ],
+  "CATEGORY_FIELD_SEEDS": {
+    "Graphics Cards": [
+      [
+        "Chipset",
+        "e.g. GeForce RTX 5070"
+      ],
+      [
+        "Memory",
+        "e.g. 12GB GDDR7"
+      ],
+      [
+        "Interface",
+        "e.g. PCI Express 5.0"
+      ],
+      [
+        "Cooling",
+        "e.g. Dual-fan"
+      ]
+    ],
+    "Used Graphics Cards": [
+      [
+        "Chipset",
+        "e.g. GeForce RTX 3060"
+      ],
+      [
+        "Memory",
+        "e.g. 12GB GDDR6"
+      ],
+      [
+        "Condition",
+        "e.g. Tested, light use"
+      ],
+      [
+        "Warranty",
+        "e.g. 7-day check warranty"
+      ]
+    ],
+    "Processors": [
+      [
+        "Cores",
+        "e.g. 8 cores / 16 threads"
+      ],
+      [
+        "Boost clock",
+        "e.g. Up to 5.2GHz"
+      ],
+      [
+        "Socket",
+        "e.g. AM5"
+      ],
+      [
+        "Cache",
+        "e.g. 96MB 3D V-Cache"
+      ]
+    ],
+    "Motherboards": [
+      [
+        "Chipset",
+        "e.g. AMD B650"
+      ],
+      [
+        "Socket",
+        "e.g. AM5"
+      ],
+      [
+        "Memory",
+        "e.g. DDR5 support"
+      ],
+      [
+        "Form factor",
+        "e.g. ATX"
+      ]
+    ],
+    "Memory": [
+      [
+        "Capacity",
+        "e.g. 32GB total"
+      ],
+      [
+        "Kit",
+        "e.g. 2 x 16GB"
+      ],
+      [
+        "Speed",
+        "e.g. 6000MT/s"
+      ],
+      [
+        "Type",
+        "e.g. DDR5"
+      ]
+    ],
+    "Storage": [
+      [
+        "Capacity",
+        "e.g. 1TB"
+      ],
+      [
+        "Form factor",
+        "e.g. M.2 2280"
+      ],
+      [
+        "Interface",
+        "e.g. PCIe 4.0 NVMe"
+      ],
+      [
+        "Read speed",
+        "e.g. Up to 6000MB/s"
+      ]
+    ],
+    "Power Supplies": [
+      [
+        "Output",
+        "e.g. 850W continuous"
+      ],
+      [
+        "Efficiency",
+        "e.g. 80 PLUS Gold"
+      ],
+      [
+        "Modularity",
+        "e.g. Fully modular"
+      ],
+      [
+        "Standards",
+        "e.g. ATX 3.1"
+      ]
+    ],
+    "Cases & Cooling": [
+      [
+        "Form factor",
+        "e.g. Mid-tower, ATX"
+      ],
+      [
+        "Front panel",
+        "e.g. Mesh"
+      ],
+      [
+        "Included fans",
+        "e.g. Four ARGB fans"
+      ],
+      [
+        "Side panel",
+        "e.g. Tempered glass"
+      ]
+    ],
+    "Laptops": [
+      [
+        "Processor",
+        "e.g. Core Ultra 7"
+      ],
+      [
+        "Memory",
+        "e.g. 16GB"
+      ],
+      [
+        "Storage",
+        "e.g. 1TB NVMe SSD"
+      ],
+      [
+        "Display",
+        "e.g. 14-inch high-resolution"
+      ]
+    ],
+    "Used Laptops": [
+      [
+        "Processor",
+        "e.g. Core i7 12th gen"
+      ],
+      [
+        "Memory",
+        "e.g. 16GB"
+      ],
+      [
+        "Condition",
+        "e.g. Grade A, new battery"
+      ],
+      [
+        "Warranty",
+        "e.g. 7-day check warranty"
+      ]
+    ],
+    "Monitors": [
+      [
+        "Panel",
+        "e.g. 27-inch QHD IPS"
+      ],
+      [
+        "Refresh rate",
+        "e.g. 180Hz"
+      ],
+      [
+        "Response time",
+        "e.g. 1ms"
+      ],
+      [
+        "Sync",
+        "e.g. Adaptive sync"
+      ]
+    ],
+    "Audio": [
+      [
+        "Type",
+        "e.g. Over-ear wireless"
+      ],
+      [
+        "Battery",
+        "e.g. Up to 40 hours"
+      ],
+      [
+        "Connection",
+        "e.g. Bluetooth"
+      ],
+      [
+        "Noise control",
+        "e.g. Active cancellation"
+      ]
+    ],
+    "Accessories": [
+      [
+        "Compatibility",
+        "e.g. Windows and Mac"
+      ],
+      [
+        "Connection",
+        "e.g. USB-C / wireless"
+      ],
+      [
+        "Layout",
+        "e.g. 75% compact"
+      ],
+      [
+        "Extra",
+        "e.g. Hot-swappable"
+      ]
+    ]
+  },
+  "PRODUCT_CATEGORIES": [
+    "Accessories",
+    "Audio",
+    "Cases & Cooling",
+    "Graphics Cards",
+    "Laptops",
+    "Memory",
+    "Monitors",
+    "Motherboards",
+    "Power Supplies",
+    "Processors",
+    "Storage",
+    "Used Graphics Cards",
+    "Used Laptops"
+  ],
+  "CATEGORY_SORT_ORDER": [
+    "Graphics Cards",
+    "Used Graphics Cards",
+    "Processors",
+    "Motherboards",
+    "Memory",
+    "Storage",
+    "Power Supplies",
+    "Cases & Cooling",
+    "Laptops",
+    "Used Laptops",
+    "Monitors",
+    "Audio",
+    "Accessories"
+  ],
+  "CATEGORY_DEFAULT_PARENTS": {
+    "Used Graphics Cards": "Graphics Cards",
+    "Used Laptops": "Laptops"
+  },
+  "ORDER_STATUSES": [
+    "cancelled",
+    "confirmed",
+    "delivered",
+    "pending",
+    "processing",
+    "shipped"
+  ],
+  "PAYMENT_METHODS": [
+    "bank_transfer_manual",
+    "cash_on_delivery"
+  ],
+  "PAYMENT_STATUSES": [
+    "due_on_delivery",
+    "paid",
+    "pending",
+    "refunded",
+    "unpaid"
+  ],
+  "REVISION_STATUSES": [
+    "discarded",
+    "draft",
+    "published",
+    "superseded"
+  ],
+  "UPLOAD_EXTENSIONS": [
+    ".gif",
+    ".jpeg",
+    ".jpg",
+    ".png",
+    ".webp"
+  ],
+  "UPLOAD_MAX_BYTES": 5242880
+}

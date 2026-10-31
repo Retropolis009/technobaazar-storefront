@@ -1,176 +1,64 @@
 # TechnoBaazar
 
-A TypeScript storefront with a Flask + SQLAlchemy backend, modeled on the
-Nutikals backend architecture: database-driven landing content with draft/publish
-revisions, customizable product pages, server-side guest + customer carts,
-coupon-aware checkout, order management, and media uploads.
+A responsive TypeScript storefront backed by a Node.js API. The API uses Express and Sequelize, and supports PostgreSQL for deployment plus SQLite for local development and tests. The existing SQL schema and catalog data are retained.
 
 ```
 technobaazar-storefront/
-├── backend/    # Flask API, SQLAlchemy models, migrations, uploads
-└── frontend/   # React + Vite storefront (same-origin API calls)
+├── backend/    # Express API, Sequelize models, migrations, seed scripts, media
+└── frontend/   # React + Vite storefront
 ```
 
 ## Requirements
 
-- Node.js 20.19+ or 22.12+ (frontend)
-- Python 3.11+ (backend)
-- Docker Compose v2 (recommended for local PostgreSQL; an optional embedded helper is also available)
+- Node.js 20.17+ (22 LTS recommended)
+- npm
+- Docker Compose v2 (recommended for local PostgreSQL; SQLite is also supported)
 
 ## Run locally
 
-Terminal 1 — backend:
+Terminal 1 — database and API:
 
 ```sh
+docker compose up -d --wait postgres
 cd backend
-python -m venv .venv
-.venv/bin/activate            # Windows: .venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-cp .env.example .env          # Windows: Copy-Item .env.example .env
+npm ci
+cp .env.example .env       # fill in private values
+npm run migrate
+npm run create-admin       # uses ADMIN_EMAIL + ADMIN_PASSWORD from .env
+npm run seed:catalog       # one-time; includes store defaults and starter catalog
+npm start                  # API at http://localhost:5000/api
 ```
 
-Set private values in `backend/.env`, then:
-
-```sh
-flask --app app db upgrade
-flask --app app create-admin    # needs ADMIN_EMAIL + ADMIN_PASSWORD in .env
-flask --app app seed-catalog
-flask --app app run --debug     # API at http://localhost:5000/api
-```
+For SQLite, set `DATABASE_URL=sqlite:///store.db` in `backend/.env`. Run `npm run migrate` before using the API. To seed only store settings, categories, cities, and CMS defaults, run `npm run seed:store`. The optional `npm run seed:more` adds extra listings; `npm run verify:catalog` checks that all 57 starter listings remain present.
 
 Terminal 2 — frontend:
 
 ```sh
 cd frontend
-npm install
-npm run dev                   # store at http://localhost:5173 (proxies /api)
+npm ci
+npm run dev                # store at http://localhost:5173 (proxies /api)
 ```
 
-Notes:
+## Environment and deployment
 
-- `seed-catalog` imports the starter products plus store defaults (delivery
-  cities, settings, categories, landing content). `seed-store` refreshes just
-  the store defaults and is safe to rerun.
-- For the documented migration workflow, keep `AUTO_CREATE_TABLES=false` and
-  run Alembic before startup. Set it to `true` only for quick throwaway
-  prototypes that intentionally skip migrations; production should always use
-  migrations with runtime table creation disabled.
+`backend/.env.example` documents the supported environment variables. Set a unique `SESSION_SECRET` (the legacy `FLASK_SECRET_KEY` is also accepted for existing deployments), a PostgreSQL `DATABASE_URL`, `APP_ENV=production`, exact `FRONTEND_ORIGIN`, and `AUTO_CREATE_TABLES=false` for production. Set `TRUSTED_PROXY_HOPS` when requests pass through a TLS-terminating proxy. The API uses secure HttpOnly session cookies in production and enforces the configured request origin for state-changing routes. Admin sign-in uses the Node API; migrated Werkzeug password hashes remain supported.
 
+- **One service:** run `npm run build` in `frontend/`, then start the API from `backend/`; if `frontend/dist/` exists, Express serves the storefront with an SPA fallback.
+- **Split hosting:** deploy `frontend/dist/` as static assets and the Node API separately. Set `VITE_API_URL` at frontend build time and include the frontend origin in `FRONTEND_ORIGIN`.
+- PostgreSQL is the recommended production database. SQLite remains available for local use and automated tests.
 
-### Local PostgreSQL (recommended)
+## Database migrations and data
 
-Start a persistent local Postgres 16 database from the repository root:
+- `npm run migrate` applies `backend/db/migrations/*.sql` to PostgreSQL, tracking applied files in `schema_migrations`. For SQLite, the Sequelize migration runner creates missing tables and adds missing columns in place to preserve existing records.
+- These migrations retain the existing schema and data; no catalog replacement is performed.
+- The starter catalog is one-time per database. `seed:catalog` refuses to overwrite an initialized catalog.
 
-```sh
-docker compose up -d --wait postgres
-cd backend
-python -m venv .venv
-.venv/bin/activate            # Windows: .venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-cp .env.example .env          # Windows: Copy-Item .env.example .env
-```
+## Storefront and admin features
 
-The example `.env` points `DATABASE_URL` at the Compose database
-(`postgresql+psycopg://technobaazar:technobaazar@localhost:5432/technobaazar`).
-These credentials are for local development only. Then apply the full Alembic
-migration chain, seed the 57 starter listings, and verify the configured DB:
+The existing API routes and frontend contracts are maintained, including guest/customer carts, checkout and idempotency, inventory reservations, coupons, customer accounts and order history, admin order management and CSV/XLSX exports, product SEO and galleries, category hierarchy and custom specification fields, media uploads, CMS draft/publish/history, delivery settings, robots.txt, and sitemap generation.
 
-```sh
-flask --app app db upgrade
-flask --app app create-admin    # needs ADMIN_EMAIL + ADMIN_PASSWORD in .env
-flask --app app seed-catalog
-flask --app app verify-catalog # must report 57/57 in postgresql database
-flask --app app run --debug
-```
+Open `/admin` and sign in with the configured administrator account. Create the first account using `npm run create-admin` after migrations.
 
-The seeded catalog is intentionally one-time per database; `seed-catalog`
-refuses to overwrite an already initialized catalog. To add optional extra
-listings after seeding, run `python seed_more_products.py` from `backend/`;
-`verify-catalog` checks that all 57 starter products remain present while
-allowing those additions. To reset this disposable local database and start
-over, run `docker compose down -v` and then repeat the commands. Keep
-`DATABASE_URL` set in the backend environment to run the store against Postgres.
-SQLite remains supported if you explicitly set `DATABASE_URL=sqlite:///store.db`.
+## Validation
 
-If Docker is unavailable, `backend/local_postgres.py` can start a disposable
-local PostgreSQL instance using the optional `pgserver` package (`pip install
-pgserver==0.1.4`). Run it from `backend/`; it prints a connection URL to use as
-`DATABASE_URL`. The Compose setup above remains the recommended persistent
-option.
-
-## Database migrations
-
-Two equivalent tracks, kept in the same order:
-
-- **Alembic** (app-managed): `backend/migrations/versions/*.py`,
-  applied with `flask --app app db upgrade`.
-- **Raw SQL** (Nutikals-style, for managed Postgres / hosting panels):
-  `backend/db/migrations/*.sql`, applied with `psql` or
-  `python sql_migrate.py` from `backend/`. See `backend/db/README.md`.
-
-## Hosting
-
-- **One service (simplest):** build the frontend, then serve everything from
-  Flask — when `frontend/dist/` exists, the API also serves the storefront
-  with an SPA fallback (no CORS needed):
-  ```sh
-  cd frontend && npm run build
-  cd ../backend && gunicorn --bind 0.0.0.0:8000 app:app
-  ```
-- **Split hosting:** deploy `frontend/dist/` to any static host and the Flask
-  app separately. Set `VITE_API_URL` at frontend build time
-  (e.g. `VITE_API_URL=https://api.example.com`) and add the storefront origin
-  to `FRONTEND_ORIGIN` in the backend (comma-separated list allowed).
-- The frontend build uses **relative asset paths** and relative API URLs by
-  default, so it works from any domain or sub-path without code changes.
-- Production backend checklist: `APP_ENV=production`, PostgreSQL
-  (`DATABASE_URL`), a unique random `FLASK_SECRET_KEY`, HTTPS everywhere,
-  exact `FRONTEND_ORIGIN`, `AUTO_CREATE_TABLES=false`, and `TRUSTED_PROXY_HOPS`
-  when behind a TLS-terminating reverse proxy. Admin API and dashboard access
-  reject plain HTTP in production, set secure HttpOnly session cookies, and
-  require credentials again on each dashboard visit (no persistent browser
-  token). `create-admin` rejects placeholder or shorter-than-12-character
-  passwords. Localhost HTTP is allowed only for local development.
-
-## Admin dashboard
-
-Open `/admin` and sign in through the Flask API:
-
-- **Overview** — catalog, order, revenue, and low-stock stats.
-- **Products** — search, category filters, add/edit/delete, compare-at prices,
-  stock tracking toggle, and per-product page content (eyebrow, subtitle,
-  gallery, intro highlight, info notes).
-- **Orders** — readable order cards with customer, delivery, items, totals, and
-  fulfillment separated into clear sections; search and filters; status/payment
-  updates; CSV export; and confirmed deletion (reserved stock is restored).
-- **Sales tracker** — 7/30/90-day revenue, order counts, average order value,
-  previous-period comparison, daily sales chart, and best sellers.
-- **Images** — a dedicated media library to upload, preview, copy, and delete
-  storefront images. New uploads live in `backend/images/` (or `UPLOAD_DIR`).
-- **Landing content** — edit the announcement bar, hero, section headings,
-  benefits, and checkout notes as a draft, then publish; revision history
-  with restore.
-- **Settings** — delivery fees, free-delivery threshold, low-stock alert,
-  delivery cities, coupons, category visibility, and the media library
-  (uploaded images are served from `/api/media/...`).
-- **SEO** — site and page-level snippets, search-engine verification, analytics
-  IDs, robots.txt, business JSON-LD details, social profiles, live snippet/card
-  previews, and a searchable product SEO editor with completeness indicators.
-
-## Customer checkout
-
-Shoppers check out as guests or signed-in customers. Name, phone, email, delivery
-address, selected Pakistan city, postal code, payment method, and delivery
-instructions are required (enter “No special instructions” if needed); promo
-codes remain optional. City-wise delivery fees, coupon-aware
-totals, cash on delivery or manual bank transfer, and an idempotent order
-confirmation are supported. Signed-in customers keep their bag, favorites, and
-order history. Run `flask --app app seed-store` after deploying to populate new
-and additional Pakistan delivery cities.
-
-## Frontend scripts (run inside `frontend/`)
-
-- `npm run dev` starts the local development server.
-- `npm run build` type-checks the project and creates a production build in `dist/`.
-- `npm run lint` checks the source with ESLint.
-- `npm run preview` serves the production build locally.
+From `backend/`, run `npm test` and `npm audit`. From `frontend/`, run `npm run build` and `npm run lint`.

@@ -63,7 +63,7 @@ function AdminPage({ products, onProductsChange }: Props) {
         if (!response.ok) throw new Error('Could not reset the previous admin session.')
         setAuthenticated(false); setEmail(''); setPassword('')
       })
-      .catch(() => setError('Admin sign-in could not be secured. Confirm the Flask API is available over HTTPS.'))
+      .catch(() => setError('Admin sign-in could not be secured. Confirm the Node.js API is available over HTTPS.'))
       .finally(() => setSessionResetting(false))
   }, [])
 
@@ -73,9 +73,9 @@ function AdminPage({ products, onProductsChange }: Props) {
     async function loadServerCatalog() {
       try {
         const catalog = await adminFetch<{ initialized: boolean; products: Product[] }>('/api/catalog')
-        if (!catalog.initialized) throw new Error('Catalog is not initialized. Run `flask --app app seed-catalog` in the backend folder.')
+        if (!catalog.initialized) throw new Error('Catalog is not initialized. Run `npm run seed:catalog` in the backend folder.')
         onProductsChange(catalog.products)
-      } catch (cause) { setError(cause instanceof Error && cause.message ? cause.message : 'Could not sync the catalog with Flask. Check that the backend is running.') }
+      } catch (cause) { setError(cause instanceof Error && cause.message ? cause.message : 'Could not sync the catalog with the Node.js API. Check that the backend is running.') }
     }
     void loadServerCatalog()
   }, [authenticated, onProductsChange])
@@ -448,7 +448,7 @@ function OverviewSection({ products }: { products: Product[] }) {
         {stats?.recentOrders.length ? <ul className="mt-3 divide-y divide-[#edf0eb] text-sm">{stats.recentOrders.map(order => <li key={order.orderNumber} className="flex items-center justify-between gap-3 py-2.5"><span><strong>{order.orderNumber}</strong><span className="ml-2 text-xs capitalize text-[#68736c]">{order.status}</span></span><strong>{formatPKR(order.total)}</strong></li>)}</ul> : <p className="mt-3 text-sm text-[#68736c]">No orders yet.</p>}
       </div>
     </div>
-    <p className="mt-5 text-xs text-[#68736c]">Product changes are saved in the Flask database and shown on the storefront.</p>
+    <p className="mt-5 text-xs text-[#68736c]">Product changes are saved in the store database and shown on the storefront.</p>
   </>
 }
 

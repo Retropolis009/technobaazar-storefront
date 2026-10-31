@@ -1,0 +1,35 @@
+{
+  "name": "technobaazar-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "migrate": "node migrate.js",
+    "seed:store": "node seed-store.js",
+    "seed:catalog": "node seed-catalog.js",
+    "seed:more": "node seed-more-products.js",
+    "verify:catalog": "node verify-catalog.js",
+    "create-admin": "node create-admin.js",
+    "test": "NODE_ENV=test node --test"
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
+  },
+  "dependencies": {
+    "connect-session-sequelize": "^8.0.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "fflate": "^0.8.3",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "multer": "^2.0.2",
+    "pg": "^8.13.1",
+    "sequelize": "^6.37.8",
+    "sqlite3": "^6.0.1"
+  }
+}
