@@ -152,8 +152,9 @@ Open `/admin` and sign in through the Flask API:
 ## Customer checkout
 
 Shoppers check out as guests or signed-in customers. Name, phone, email, delivery
-address, selected Pakistan city, postal code, and payment method are required;
-order notes and coupons remain optional. City-wise delivery fees, coupon-aware
+address, selected Pakistan city, postal code, payment method, and delivery
+instructions are required (enter “No special instructions” if needed); promo
+codes remain optional. City-wise delivery fees, coupon-aware
 totals, cash on delivery or manual bank transfer, and an idempotent order
 confirmation are supported. Signed-in customers keep their bag, favorites, and
 order history. Run `flask --app app seed-store` after deploying to populate new

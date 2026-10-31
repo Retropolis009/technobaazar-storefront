@@ -1040,7 +1040,7 @@ def create_app():
         address = valid_text(data, 'address', 1000, required=True)
         city = valid_text(data, 'city', 120, required=True)
         postal_code = valid_text(data, 'postalCode', 20, required=True)
-        note = valid_text(data, 'note', 500) or ''
+        note = valid_text(data, 'note', 500, required=True)
         payment_method = data.get('paymentMethod')
         coupon_code = data.get('couponCode') if isinstance(data.get('couponCode'), str) else ''
         attempt_key = verify_attempt_key(data.get('attemptKey'))
@@ -1048,8 +1048,9 @@ def create_app():
             return None, ({'error': 'Enter a valid email address.'}, 400)
         if (not customer_name or customer_name is False or not phone or phone is False
                 or not address or address is False or not city or city is False
-                or not email or email is False or not postal_code or postal_code is False):
-            return None, ({'error': 'Name, phone, email, delivery address, city, and postal code are required.'}, 400)
+                or not email or email is False or not postal_code or postal_code is False
+                or not note or note is False):
+            return None, ({'error': 'Name, phone, email, delivery address, city, postal code, and delivery instructions are required.'}, 400)
         if not DeliveryCity.query.filter_by(city_slug=slugify(city), active=True).first():
             return None, ({'error': 'Choose a delivery city from the available Pakistan cities.'}, 400)
         if payment_method not in PAYMENT_METHODS:

@@ -243,7 +243,7 @@ function CartPage({ products, quantities, onUpdateQuantity, onRemove, customer, 
                     ))}
                   </div>
                 </fieldset>
-                <label className="text-sm font-semibold">Order note <span className="font-normal text-[#9aa29b]">(optional)</span><input maxLength={500} value={note} onChange={(event) => setNote(event.target.value)} placeholder="Delivery instructions" className="mt-1 h-11 w-full border border-[#cfd6ce] px-3 font-normal outline-none focus:border-[#315ee8]" /></label>
+                <label className="text-sm font-semibold">Delivery instructions <span className="text-red-700">*</span><input required maxLength={500} value={note} onChange={(event) => setNote(event.target.value)} placeholder="Write ‘No special instructions’ if none" className="mt-1 h-11 w-full border border-[#cfd6ce] px-3 font-normal outline-none focus:border-[#315ee8]" /></label>
               </div>
               {error && <p role="alert" className="mt-4 text-sm text-red-700">{error}</p>}
               <button disabled={busy || !products.length} className="mt-4 h-12 w-full bg-[#142c24] font-semibold text-white transition hover:bg-[#315ee8] disabled:opacity-60">
