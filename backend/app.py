@@ -51,24 +51,24 @@ _rate_buckets = {}
 # ---------------------------------------------------------------------------
 SITE_CONTENT_DEFAULTS = {
     'announcement': 'GOOD GEAR, DELIVERED NATIONWIDE',
-    'hero_eyebrow': 'THE NEXT BUILD STARTS HERE',
-    'hero_title_top': 'Make your',
-    'hero_title_bottom': 'setup',
-    'hero_title_accent': 'unstoppable.',
-    'hero_subtitle': 'From your first build to your next big upgrade, find the gear that keeps up with you.',
-    'hero_cta_text': 'Explore All Gear',
+    'hero_eyebrow': 'PC PARTS, LAPTOPS & MORE',
+    'hero_title_top': 'Build your',
+    'hero_title_bottom': 'next',
+    'hero_title_accent': 'great setup.',
+    'hero_subtitle': 'Explore computer components, laptops, gaming gear, and everyday tech. Compare specifications and find what fits your setup.',
+    'hero_cta_text': 'Shop the catalog',
     'hero_cta_url': '/collections/all-gear',
-    'hero_social_proof': 'Picked by people who know their specs.',
+    'hero_social_proof': 'Browse the current catalog and compare your options.',
     'hero_image': 'https://images.unsplash.com/photo-1593305841991-05c297ba4575?auto=format&fit=crop&w=1400&q=90',
     'hero_image_alt': 'A high-performance gaming PC setup with illuminated components',
-    'hero_card_kicker': 'YOUR NEXT UPGRADE',
-    'hero_card_title': 'Starts with one part.',
-    'hero_badge': 'BUILD YOUR WAY',
-    'departments_kicker': 'Find your frequency',
-    'departments_title': 'Shop by department',
-    'featured_kicker': 'The good stuff',
-    'featured_title': 'Worth a closer look.',
-    'featured_subtitle': 'Hand-picked tech for work, play, and everything between.',
+    'hero_card_kicker': 'TECHNOBAAZAR STORE',
+    'hero_card_title': 'Parts for every setup.',
+    'hero_badge': 'SHOP BY CATEGORY',
+    'departments_kicker': 'Browse the store',
+    'departments_title': 'Shop by category',
+    'featured_kicker': 'Featured products',
+    'featured_title': 'Find the right gear for your setup.',
+    'featured_subtitle': 'Compare current computer components, laptops, and accessories from the store catalog.',
     'benefits': json.dumps([
         {'title': 'Across Pakistan', 'detail': 'Carefully packed, right to your door.'},
         {'title': 'Gear you can trust', 'detail': 'Authentic products with local warranty.'},
@@ -80,17 +80,17 @@ SITE_CONTENT_DEFAULTS = {
     'order_confirmation_note': 'After your order, our team contacts you by phone or WhatsApp to confirm delivery.',
     'header_brand_prefix': 'TECHNO',
     'header_brand_accent': 'BAAZAR',
-    'header_tagline': 'SUPPLY CO.',
-    'header_search_placeholder': 'Search laptops, components, gear...',
-    'header_mobile_search_placeholder': 'Search the store',
+    'header_tagline': 'COMPUTERS & TECH',
+    'header_search_placeholder': 'Search products, brands, and categories...',
+    'header_mobile_search_placeholder': 'Search products and brands',
     'header_about_text': 'Why TechnoBaazar',
     'footer_brand_text': 'TECHNOBAAZAR',
     'footer_tagline': 'Good gear for whatever you\u2019re building.',
     'footer_admin_text': 'Admin',
     'footer_home_text': 'Back to home',
-    'seo_site_title': 'TechnoBaazar \u2014 Computer Store in Pakistan',
-    'seo_site_description': 'Shop graphics cards, processors, laptops, and gaming gear online in Pakistan with nationwide delivery and local warranty.',
-    'seo_site_keywords': 'computer store pakistan, gaming pc, graphics cards, laptops, processors, technobaazar',
+    'seo_site_title': 'TechnoBaazar | Computer Parts, Laptops & Gaming PCs in Pakistan',
+    'seo_site_description': 'Shop computer components, gaming PCs, laptops, and accessories at TechnoBaazar. Compare specifications and prices, with nationwide delivery across Pakistan.',
+    'seo_site_keywords': 'computer store pakistan, computer components, gaming pc, laptops, graphics cards, processors, monitors, technobaazar',
     'seo_og_image': 'https://images.unsplash.com/photo-1593305841991-05c297ba4575?auto=format&fit=crop&w=1200&q=80',
     'seo_canonical_base': '',
     'seo_google_verification': '',
@@ -98,7 +98,7 @@ SITE_CONTENT_DEFAULTS = {
     'seo_google_analytics_id': '',
     'seo_google_tag_manager_id': '',
     'seo_meta_pixel_id': '',
-    'seo_robots_txt': 'User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /cart\nDisallow: /account\nDisallow: /favorites',
+    'seo_robots_txt': 'User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /cart\nDisallow: /checkout\nDisallow: /account\nDisallow: /favorites',
     'seo_business_name': 'TechnoBaazar',
     'seo_business_legal_name': '',
     'seo_business_phone': '',
@@ -123,6 +123,34 @@ SITE_CONTENT_DEFAULTS = {
     'seo_favorites_description': '',
     'seo_account_title': 'My Account | TechnoBaazar',
     'seo_account_description': '',
+}
+
+# Values below were shipped as the original built-in copy. When an existing
+# deployment still has an untouched seed revision, normalize only those exact
+# defaults to the current storefront copy while leaving merchant edits intact.
+LEGACY_SITE_CONTENT_DEFAULTS = {
+    'hero_eyebrow': 'THE NEXT BUILD STARTS HERE',
+    'hero_title_top': 'Make your',
+    'hero_title_bottom': 'setup',
+    'hero_title_accent': 'unstoppable.',
+    'hero_subtitle': 'From your first build to your next big upgrade, find the gear that keeps up with you.',
+    'hero_cta_text': 'Explore All Gear',
+    'hero_social_proof': 'Picked by people who know their specs.',
+    'hero_card_kicker': 'YOUR NEXT UPGRADE',
+    'hero_card_title': 'Starts with one part.',
+    'hero_badge': 'BUILD YOUR WAY',
+    'departments_kicker': 'Find your frequency',
+    'departments_title': 'Shop by department',
+    'featured_kicker': 'The good stuff',
+    'featured_title': 'Worth a closer look.',
+    'featured_subtitle': 'Hand-picked tech for work, play, and everything between.',
+    'header_tagline': 'SUPPLY CO.',
+    'header_search_placeholder': 'Search laptops, components, gear...',
+    'header_mobile_search_placeholder': 'Search the store',
+    'seo_site_title': 'TechnoBaazar \u2014 Computer Store in Pakistan',
+    'seo_site_description': 'Shop graphics cards, processors, laptops, and gaming gear online in Pakistan with nationwide delivery and local warranty.',
+    'seo_site_keywords': 'computer store pakistan, gaming pc, graphics cards, laptops, processors, technobaazar',
+    'seo_robots_txt': 'User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /cart\nDisallow: /account\nDisallow: /favorites',
 }
 SITE_CONTENT_URL_FIELDS = {'hero_cta_url', 'hero_image', 'seo_og_image', 'seo_business_logo', 'seo_social_facebook', 'seo_social_instagram', 'seo_social_tiktok', 'seo_social_youtube', 'seo_social_x'}
 SITE_CONTENT_STRUCTURED_FIELDS = {'benefits'}
@@ -678,6 +706,9 @@ def create_app():
         if isinstance(values, dict):
             for key in SITE_CONTENT_DEFAULTS:
                 if key in values and isinstance(values[key], str):
+                    legacy_default = LEGACY_SITE_CONTENT_DEFAULTS.get(key)
+                    if legacy_default is not None and values[key] == legacy_default:
+                        continue
                     content[key] = values[key]
         return content
 

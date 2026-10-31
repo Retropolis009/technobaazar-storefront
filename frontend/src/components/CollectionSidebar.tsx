@@ -20,11 +20,9 @@ interface CollectionSidebarProps {
   minPrice: string
   maxPrice: string
   selectedBrands: string[]
-  sortBy: string
   onMinPriceChange: (value: string) => void
   onMaxPriceChange: (value: string) => void
   onToggleBrand: (brand: string) => void
-  onSortChange: (value: string) => void
   onReset: () => void
 }
 
@@ -36,11 +34,9 @@ function CollectionSidebar({
   minPrice,
   maxPrice,
   selectedBrands,
-  sortBy,
   onMinPriceChange,
   onMaxPriceChange,
   onToggleBrand,
-  onSortChange,
   onReset,
 }: CollectionSidebarProps) {
   const [expanded, setExpanded] = useState<Record<number, boolean>>({})
@@ -72,21 +68,6 @@ function CollectionSidebar({
         </nav>
       </section>
 
-      <section aria-labelledby={`${idPrefix}-sidebar-sort`}>
-        <label id={`${idPrefix}-sidebar-sort`} htmlFor={`${idPrefix}-collection-sort`} className="mb-2 block text-xs font-bold uppercase tracking-[0.12em]">Sort by</label>
-        <select
-          id={`${idPrefix}-collection-sort`}
-          value={sortBy}
-          onChange={(event) => onSortChange(event.target.value)}
-          className="h-10 w-full border border-[#dfe4dc] bg-white px-3 text-xs text-[#27332c] outline-none focus:border-[#315ee8]"
-        >
-          <option value="featured">Featured</option>
-          <option value="price-low">Price: low to high</option>
-          <option value="price-high">Price: high to low</option>
-          <option value="name-a-z">Name: A to Z</option>
-          <option value="name-z-a">Name: Z to A</option>
-        </select>
-      </section>
 
       <section aria-labelledby={`${idPrefix}-sidebar-price`}>
         <h2 id={`${idPrefix}-sidebar-price`} className="mb-3 text-xs font-bold uppercase tracking-[0.12em]">Price range</h2>

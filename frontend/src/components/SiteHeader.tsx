@@ -42,7 +42,7 @@ function SiteHeader({
 }: SiteHeaderProps) {
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-[#e1e5df] bg-[#f5f6f2]/95 backdrop-blur-md">
+      <header className="sticky top-0 z-40 border-b border-[#e1e6ed] bg-white/95 shadow-[0_2px_12px_rgba(23,36,58,.04)] backdrop-blur-md">
         <div className="mx-auto flex max-w-[1440px] items-center gap-4 px-4 py-3 sm:px-7 lg:px-10">
           <button
             type="button"
@@ -87,14 +87,14 @@ function SiteHeader({
 
           <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
             <Link to="/account" className="header-action header-action-secondary" aria-label="Account">
-              <UserRound size={19} strokeWidth={1.7} />
+              <UserRound size={19} strokeWidth={1.7} /><span className="hidden text-[11px] font-semibold xl:block">Account</span>
             </Link>
             <Link to="/favorites" className="header-action header-action-secondary" aria-label={`Favorites, ${favoritesCount} items`}>
-              <Heart size={19} strokeWidth={1.7} />
+              <Heart size={19} strokeWidth={1.7} /><span className="hidden text-[11px] font-semibold xl:block">Saved</span>
               {favoritesCount > 0 && <span className="action-count">{favoritesCount}</span>}
             </Link>
-            <Link to="/cart" className="header-action" aria-label={`Shopping bag, ${cartCount} items`}>
-              <ShoppingBag size={19} strokeWidth={1.7} />
+            <Link to="/cart" className="header-action" aria-label={`Shopping cart, ${cartCount} items`}>
+              <ShoppingBag size={19} strokeWidth={1.7} /><span className="hidden text-[11px] font-semibold xl:block">Cart</span>
               <span className="action-count">{cartCount}</span>
             </Link>
           </div>
