@@ -4,5 +4,5 @@ Flask-Migrate>=4.0,<5
 Flask-Cors>=5.0,<7
 python-dotenv>=1.0,<2
 gunicorn>=23,<24
-# Postgres driver (local dev database and production):
+# PostgreSQL driver (SQLite remains available for lightweight development/tests):
 psycopg[binary]>=3.1,<4

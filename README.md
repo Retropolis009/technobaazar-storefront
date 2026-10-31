@@ -15,6 +15,7 @@ technobaazar-storefront/
 
 - Node.js 20.19+ or 22.12+ (frontend)
 - Python 3.11+ (backend)
+- Docker Compose v2 (recommended for local PostgreSQL; an optional embedded helper is also available)
 
 ## Run locally
 
@@ -50,29 +51,52 @@ Notes:
 - `seed-catalog` imports the starter products plus store defaults (delivery
   cities, settings, categories, landing content). `seed-store` refreshes just
   the store defaults and is safe to rerun.
-- The app also creates missing tables and default rows at startup
-  (Nutikals-style runtime ensures). In production, run migrations and set
-  `AUTO_CREATE_TABLES=false`.
+- For the documented migration workflow, keep `AUTO_CREATE_TABLES=false` and
+  run Alembic before startup. Set it to `true` only for quick throwaway
+  prototypes that intentionally skip migrations; production should always use
+  migrations with runtime table creation disabled.
 
-## Local PostgreSQL
 
-SQLite works out of the box, but the recommended local database is
-PostgreSQL — same engine as production. No system install needed: the
-helper uses embedded Postgres binaries (data in `~/pgdata`, outside the repo).
+### Local PostgreSQL (recommended)
+
+Start a persistent local Postgres 16 database from the repository root:
 
 ```sh
+docker compose up -d --wait postgres
 cd backend
-pip install "pgserver==0.1.4"   # one time, inside your venv
-python local_postgres.py start  # prints DATABASE_URL
+python -m venv .venv
+.venv/bin/activate            # Windows: .venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+cp .env.example .env          # Windows: Copy-Item .env.example .env
 ```
 
-Copy the printed `DATABASE_URL` into `backend/.env`, then run the usual
-setup (`db upgrade`, `create-admin`, `seed-catalog`). Other commands:
+The example `.env` points `DATABASE_URL` at the Compose database
+(`postgresql+psycopg://technobaazar:technobaazar@localhost:5432/technobaazar`).
+These credentials are for local development only. Then apply the full Alembic
+migration chain, seed the 57 starter listings, and verify the configured DB:
 
 ```sh
-python local_postgres.py status  # server + database health
-python local_postgres.py stop    # stop the server (data is kept)
+flask --app app db upgrade
+flask --app app create-admin    # needs ADMIN_EMAIL + ADMIN_PASSWORD in .env
+flask --app app seed-catalog
+flask --app app verify-catalog # must report 57/57 in postgresql database
+flask --app app run --debug
 ```
+
+The seeded catalog is intentionally one-time per database; `seed-catalog`
+refuses to overwrite an already initialized catalog. To add optional extra
+listings after seeding, run `python seed_more_products.py` from `backend/`;
+`verify-catalog` checks that all 57 starter products remain present while
+allowing those additions. To reset this disposable local database and start
+over, run `docker compose down -v` and then repeat the commands. Keep
+`DATABASE_URL` set in the backend environment to run the store against Postgres.
+SQLite remains supported if you explicitly set `DATABASE_URL=sqlite:///store.db`.
+
+If Docker is unavailable, `backend/local_postgres.py` can start a disposable
+local PostgreSQL instance using the optional `pgserver` package (`pip install
+pgserver==0.1.4`). Run it from `backend/`; it prints a connection URL to use as
+`DATABASE_URL`. The Compose setup above remains the recommended persistent
+option.
 
 ## Database migrations
 
@@ -102,8 +126,11 @@ Two equivalent tracks, kept in the same order:
 - Production backend checklist: `APP_ENV=production`, PostgreSQL
   (`DATABASE_URL`), a unique random `FLASK_SECRET_KEY`, HTTPS everywhere,
   exact `FRONTEND_ORIGIN`, `AUTO_CREATE_TABLES=false`, and `TRUSTED_PROXY_HOPS`
-  when behind a reverse proxy. Outside production, localhost and https sandbox
-  preview origins are accepted for mutations to keep hosted previews testable.
+  when behind a TLS-terminating reverse proxy. Admin API and dashboard access
+  reject plain HTTP in production, set secure HttpOnly session cookies, and
+  require credentials again on each dashboard visit (no persistent browser
+  token). `create-admin` rejects placeholder or shorter-than-12-character
+  passwords. Localhost HTTP is allowed only for local development.
 
 ## Admin dashboard
 
@@ -113,26 +140,33 @@ Open `/admin` and sign in through the Flask API:
 - **Products** — search, category filters, add/edit/delete, compare-at prices,
   stock tracking toggle, and per-product page content (eyebrow, subtitle,
   gallery, intro highlight, info notes).
-- **Orders** — search/filter, status + payment updates (cancelling restores
-  stock), order details, and CSV export.
-- **Landing content** — edit the announcement bar, hero, header/footer text,
-  section headings, benefits, and checkout notes as a draft, then publish;
-  revision history with restore. A live preview shows the homepage as you type.
-- **SEO** — site title/description/keywords, canonical domain, social share
-  image, Google/Bing verification, GA4/Tag Manager/Meta Pixel IDs, business
-  info (JSON-LD), robots.txt, per-page titles, and per-product search settings
-  with an SEO-health checklist. Live Google-snippet and link previews.
-  Crawlers are served `/robots.txt` and an auto-generated `/sitemap.xml`.
+- **Orders** — readable order cards with customer, delivery, items, totals, and
+  fulfillment separated into clear sections; search and filters; status/payment
+  updates; CSV export; and confirmed deletion (reserved stock is restored).
+- **Sales tracker** — 7/30/90-day revenue, order counts, average order value,
+  previous-period comparison, daily sales chart, and best sellers.
+- **Images** — a dedicated media library to upload, preview, copy, and delete
+  storefront images. New uploads live in `backend/images/` (or `UPLOAD_DIR`).
+- **Landing content** — edit the announcement bar, hero, section headings,
+  benefits, and checkout notes as a draft, then publish; revision history
+  with restore.
 - **Settings** — delivery fees, free-delivery threshold, low-stock alert,
   delivery cities, coupons, category visibility, and the media library
   (uploaded images are served from `/api/media/...`).
+- **SEO** — site and page-level snippets, search-engine verification, analytics
+  IDs, robots.txt, business JSON-LD details, social profiles, live snippet/card
+  previews, and a searchable product SEO editor with completeness indicators.
 
 ## Customer checkout
 
-Shoppers check out as guests or signed-in customers: quantity steppers, coupon
-codes, city-wise delivery fees with an optional free-delivery threshold, cash
-on delivery or manual bank transfer, and an idempotent order confirmation
-screen. Signed-in customers keep their bag, favorites, and order history.
+Shoppers check out as guests or signed-in customers. Name, phone, email, delivery
+address, selected Pakistan city, postal code, payment method, and delivery
+instructions are required (enter “No special instructions” if needed); promo
+codes remain optional. City-wise delivery fees, coupon-aware
+totals, cash on delivery or manual bank transfer, and an idempotent order
+confirmation are supported. Signed-in customers keep their bag, favorites, and
+order history. Run `flask --app app seed-store` after deploying to populate new
+and additional Pakistan delivery cities.
 
 ## Frontend scripts (run inside `frontend/`)
 

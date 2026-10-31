@@ -6,6 +6,8 @@ dist-ssr
 backend/.venv/
 backend/instance/
 backend/uploads/
+backend/images/*
+!backend/images/.gitkeep
 *.db
 *.db-journal
 __pycache__/

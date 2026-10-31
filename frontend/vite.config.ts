@@ -10,6 +10,8 @@ export default defineConfig({
     host: '0.0.0.0',
     allowedHosts: true,
     proxy: {
+      '/robots.txt': { target: 'http://localhost:5000', changeOrigin: true },
+      '/sitemap.xml': { target: 'http://localhost:5000', changeOrigin: true },
       '/api': {
         target: 'http://localhost:5000',
         changeOrigin: true,

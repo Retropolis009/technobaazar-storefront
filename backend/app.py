@@ -6,14 +6,14 @@ import json
 import os
 import re
 import threading
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from uuid import uuid4
 from urllib.parse import urlparse
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from dotenv import load_dotenv
-from flask import Flask, Response, jsonify, request, session, send_from_directory
+from flask import Flask, jsonify, request, session, send_from_directory
 from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
@@ -95,27 +95,36 @@ SITE_CONTENT_DEFAULTS = {
     'seo_canonical_base': '',
     'seo_google_verification': '',
     'seo_bing_verification': '',
-    'seo_ga_measurement_id': '',
-    'seo_gtm_id': '',
+    'seo_google_analytics_id': '',
+    'seo_google_tag_manager_id': '',
     'seo_meta_pixel_id': '',
+    'seo_robots_txt': 'User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /cart\nDisallow: /account\nDisallow: /favorites',
+    'seo_business_name': 'TechnoBaazar',
+    'seo_business_legal_name': '',
+    'seo_business_phone': '',
+    'seo_business_email': '',
+    'seo_business_street': '',
+    'seo_business_city': 'Karachi',
+    'seo_business_region': 'Sindh',
+    'seo_business_postal_code': '',
+    'seo_business_country': 'PK',
+    'seo_business_logo': '',
+    'seo_social_facebook': '',
+    'seo_social_instagram': '',
+    'seo_social_tiktok': '',
+    'seo_social_youtube': '',
+    'seo_social_x': '',
     'seo_twitter_handle': '',
-    'seo_facebook_url': '',
-    'seo_instagram_url': '',
-    'seo_youtube_url': '',
-    'seo_org_name': 'TechnoBaazar',
-    'seo_org_phone': '',
-    'seo_org_address': '',
-    'seo_robots_txt': 'User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /cart\nDisallow: /account',
-    'seo_about_title': '',
+    'seo_about_title': 'About | TechnoBaazar',
     'seo_about_description': '',
-    'seo_cart_title': '',
+    'seo_cart_title': 'Shopping Cart | TechnoBaazar',
     'seo_cart_description': '',
-    'seo_favorites_title': '',
+    'seo_favorites_title': 'Your Favorites | TechnoBaazar',
     'seo_favorites_description': '',
-    'seo_account_title': '',
+    'seo_account_title': 'My Account | TechnoBaazar',
     'seo_account_description': '',
 }
-SITE_CONTENT_URL_FIELDS = {'hero_cta_url', 'hero_image', 'seo_og_image', 'seo_facebook_url', 'seo_instagram_url', 'seo_youtube_url'}
+SITE_CONTENT_URL_FIELDS = {'hero_cta_url', 'hero_image', 'seo_og_image', 'seo_business_logo', 'seo_social_facebook', 'seo_social_instagram', 'seo_social_tiktok', 'seo_social_youtube', 'seo_social_x'}
 SITE_CONTENT_STRUCTURED_FIELDS = {'benefits'}
 SITE_CONTENT_LIMITS = {key: 500 for key in SITE_CONTENT_DEFAULTS}
 SITE_CONTENT_LIMITS.update({'hero_subtitle': 500, 'featured_subtitle': 500, 'benefits': 4000,
@@ -128,12 +137,16 @@ SITE_CONTENT_LIMITS.update({'hero_subtitle': 500, 'featured_subtitle': 500, 'ben
                              'footer_admin_text': 40, 'footer_home_text': 60,
                              'seo_site_title': 200, 'seo_site_description': 500,
                              'seo_site_keywords': 500, 'seo_og_image': 2000,
-                             'seo_canonical_base': 500, 'seo_google_verification': 200,
-                             'seo_bing_verification': 200, 'seo_ga_measurement_id': 30,
-                             'seo_gtm_id': 30, 'seo_meta_pixel_id': 30, 'seo_twitter_handle': 60,
-                             'seo_facebook_url': 500, 'seo_instagram_url': 500, 'seo_youtube_url': 500,
-                             'seo_org_name': 120, 'seo_org_phone': 60, 'seo_org_address': 300,
-                             'seo_robots_txt': 4000, 'seo_about_title': 200, 'seo_about_description': 500,
+                             'seo_canonical_base': 500, 'seo_robots_txt': 8000,
+                             'seo_google_verification': 200, 'seo_bing_verification': 200,
+                             'seo_google_analytics_id': 100, 'seo_google_tag_manager_id': 100,
+                             'seo_meta_pixel_id': 100, 'seo_twitter_handle': 60, 'seo_business_name': 200,
+                             'seo_business_legal_name': 200, 'seo_business_phone': 40,
+                             'seo_business_email': 254, 'seo_business_street': 300,
+                             'seo_business_city': 120, 'seo_business_region': 120,
+                             'seo_business_postal_code': 24, 'seo_business_country': 2,
+                             'seo_business_logo': 2000,
+                             'seo_about_title': 200, 'seo_about_description': 500,
                              'seo_cart_title': 200, 'seo_cart_description': 500,
                              'seo_favorites_title': 200, 'seo_favorites_description': 500,
                              'seo_account_title': 200, 'seo_account_description': 500})
@@ -147,6 +160,20 @@ DELIVERY_CITIES_SEED = [
     ('mardan', 'Mardan', 400), ('gujrat', 'Gujrat', 400), ('sahiwal', 'Sahiwal', 400),
     ('okara', 'Okara', 400), ('wah-cantt', 'Wah Cantt', 400), ('jhelum', 'Jhelum', 400),
     ('mirpur', 'Mirpur', 450), ('gilgit', 'Gilgit', 500), ('muzaffarabad', 'Muzaffarabad', 500),
+    ('larkana', 'Larkana', 400), ('sheikhupura', 'Sheikhupura', 400),
+    ('rahim-yar-khan', 'Rahim Yar Khan', 400), ('jhang', 'Jhang', 400),
+    ('dera-ghazi-khan', 'Dera Ghazi Khan', 400), ('kasur', 'Kasur', 400),
+    ('nawabshah', 'Nawabshah', 400), ('mirpur-khas', 'Mirpur Khas', 400),
+    ('khairpur', 'Khairpur', 400), ('turbat', 'Turbat', 500), ('gwadar', 'Gwadar', 500),
+    ('mingora', 'Mingora', 450), ('skardu', 'Skardu', 500), ('hunza', 'Hunza', 500),
+    ('dera-ismail-khan', 'Dera Ismail Khan', 450), ('kohat', 'Kohat', 450),
+    ('nowshera', 'Nowshera', 400), ('mansehra', 'Mansehra', 450),
+    ('chiniot', 'Chiniot', 400), ('tando-adam', 'Tando Adam', 400),
+    ('bahawalnagar', 'Bahawalnagar', 400), ('burewala', 'Burewala', 400),
+    ('vehari', 'Vehari', 400), ('attock', 'Attock', 400), ('chakwal', 'Chakwal', 400),
+    ('hafizabad', 'Hafizabad', 400), ('mandi-bahauddin', 'Mandi Bahauddin', 400),
+    ('pakpattan', 'Pakpattan', 400), ('tando-allahyar', 'Tando Allahyar', 400),
+    ('umerkot', 'Umerkot', 450), ('jacobabad', 'Jacobabad', 450), ('shikarpur', 'Shikarpur', 450),
 ]
 
 UPLOAD_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp', '.gif'}
@@ -492,19 +519,30 @@ def create_app():
     trusted_proxy_hops = int(os.environ.get('TRUSTED_PROXY_HOPS', '0'))
     if not 0 <= trusted_proxy_hops <= 5:
         raise RuntimeError('TRUSTED_PROXY_HOPS must be between 0 and 5.')
-    if production and (not secret_key or secret_key == 'dev-only-change-me'):
+    if production and (not secret_key or len(secret_key) < 32 or secret_key in {'dev-only-change-me', 'replace-with-a-long-random-secret'}):
         raise RuntimeError('Set a unique FLASK_SECRET_KEY before starting in production.')
-    upload_dir = os.environ.get('UPLOAD_DIR') or str(Path(__file__).with_name('uploads'))
-    Path(upload_dir).mkdir(parents=True, exist_ok=True)
+    image_dir = Path(__file__).with_name('images')
+    legacy_upload_dir = Path(__file__).with_name('uploads')
+    configured_upload_dir = os.environ.get('UPLOAD_DIR', '').strip()
+    if configured_upload_dir:
+        upload_dir = Path(configured_upload_dir)
+    elif legacy_upload_dir.is_dir() and any(legacy_upload_dir.iterdir()):
+        # Keep existing installations' uploaded media working after the folder
+        # naming change; fresh checkouts use backend/images/.
+        upload_dir = legacy_upload_dir
+    else:
+        upload_dir = image_dir
+    upload_dir.mkdir(parents=True, exist_ok=True)
     app.config.update(
         SECRET_KEY=secret_key or 'dev-only-change-me',
         SQLALCHEMY_DATABASE_URI=os.environ.get('DATABASE_URL', 'sqlite:///store.db'),
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         MAX_CONTENT_LENGTH=UPLOAD_MAX_BYTES + 1024 * 1024,
         SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_PATH='/',
         SESSION_COOKIE_SAMESITE='Lax',
         SESSION_COOKIE_SECURE=production or any(origin.startswith('https://') for origin in allowed_origins),
-        UPLOAD_DIR=upload_dir,
+        UPLOAD_DIR=str(upload_dir),
     )
     db.init_app(app)
     migrate.init_app(app, db)
@@ -514,6 +552,8 @@ def create_app():
 
     @app.before_request
     def enforce_origin_for_mutations():
+        if production and (request.path.startswith('/api/admin') or request.path.startswith('/admin')) and not request.is_secure:
+            return jsonify({'error': 'Admin access requires HTTPS. Configure trusted proxy headers if TLS terminates upstream.'}), 426
         if request.method in {'POST', 'PUT', 'PATCH', 'DELETE'}:
             if not origin_allowed(request.headers.get('Origin'), allowed_origins, production):
                 return jsonify({'error': 'Request origin is not allowed.'}), 403
@@ -676,6 +716,14 @@ def create_app():
                 return None
             value = value.strip() if key != 'benefits' else value.strip()
             if key in SITE_CONTENT_URL_FIELDS and value and not is_local_or_http_url(value):
+                return None
+            if key == 'seo_robots_txt' and any(ord(char) < 32 and char not in '\n\r\t' for char in value):
+                return None
+            if key == 'seo_google_analytics_id' and value and not re.fullmatch(r'G-[A-Z0-9]+', value):
+                return None
+            if key == 'seo_google_tag_manager_id' and value and not re.fullmatch(r'GTM-[A-Z0-9]+', value):
+                return None
+            if key == 'seo_meta_pixel_id' and value and not re.fullmatch(r'[0-9]{5,20}', value):
                 return None
             if key == 'benefits':
                 try:
@@ -912,26 +960,30 @@ def create_app():
     @app.get('/robots.txt')
     def robots_txt():
         content = read_published_site_content()
-        text = (content.get('seo_robots_txt') or '').strip() or SITE_CONTENT_DEFAULTS['seo_robots_txt']
-        base = (content.get('seo_canonical_base') or '').strip().rstrip('/')
-        if base and 'sitemap:' not in text.lower():
-            text = f'{text.rstrip()}\n\nSitemap: {base}/sitemap.xml'
-        return Response(text + '\n', mimetype='text/plain')
+        rules = (content.get('seo_robots_txt') or 'User-agent: *\nAllow: /').strip()
+        sitemap = f"{content.get('seo_canonical_base', '').rstrip('/')}/sitemap.xml" if content.get('seo_canonical_base', '').strip() else ''
+        if sitemap and not re.search(r'^\s*Sitemap:', rules, re.IGNORECASE | re.MULTILINE):
+            rules = f"{rules}\nSitemap: {sitemap}" if rules else f"Sitemap: {sitemap}"
+        return app.response_class(rules + ('\n' if rules else ''), mimetype='text/plain')
 
     @app.get('/sitemap.xml')
     def sitemap_xml():
-        from xml.sax.saxutils import escape
+        from xml.etree.ElementTree import Element, SubElement, tostring
         content = read_published_site_content()
-        base = (content.get('seo_canonical_base') or '').strip().rstrip('/') or request.host_url.rstrip('/')
-        entries = [(f'{base}/', '1.0'), (f'{base}/about', '0.8')]
-        for category in Category.query.filter_by(visible=True).order_by(Category.sort_order, Category.name).all():
-            slug = getattr(category, 'slug', '') or re.sub(r'[^a-z0-9]+', '-', category.name.lower()).strip('-')
-            entries.append((f'{base}/collections/{slug}', '0.9'))
-        for product in Product.query.filter_by(active=True).order_by(Product.slug).all():
-            entries.append((f'{base}/products/{product.slug}', '0.8'))
-        urls = ''.join(f'  <url><loc>{escape(loc)}</loc><priority>{priority}</priority></url>\n' for loc, priority in entries)
-        return Response(f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{urls}</urlset>\n',
-                        mimetype='application/xml')
+        base = content.get('seo_canonical_base', '').strip().rstrip('/')
+        if not base:
+            base = request.url_root.rstrip('/')
+        root = Element('urlset', {'xmlns': 'http://www.sitemaps.org/schemas/sitemap/0.9'})
+        urls = ['/', '/about']
+        categories = Category.query.filter_by(visible=True).order_by(Category.sort_order, Category.name).all()
+        urls.extend(f"/collections/{category.slug}" for category in categories)
+        products = Product.query.filter_by(active=True).order_by(Product.slug).all()
+        urls.extend(f"/products/{product.slug}" for product in products)
+        for path in urls:
+            loc = SubElement(root, 'url')
+            SubElement(loc, 'loc').text = f"{base}{path}"
+        xml = tostring(root, encoding='utf-8', xml_declaration=True)
+        return app.response_class(xml, mimetype='application/xml')
 
     @app.get('/api/store-settings')
     def public_store_settings():
@@ -997,19 +1049,23 @@ def create_app():
         """Shared Nutikals-style checkout for guests and signed-in customers."""
         customer_name = valid_text(data, 'customerName', 160, required=True)
         phone = valid_text(data, 'phone', 40, required=True)
-        email = valid_text(data, 'email', 255) or ''
+        email = valid_text(data, 'email', 255, required=True)
         address = valid_text(data, 'address', 1000, required=True)
         city = valid_text(data, 'city', 120, required=True)
-        postal_code = valid_text(data, 'postalCode', 20) or ''
-        note = valid_text(data, 'note', 500) or ''
-        payment_method = data.get('paymentMethod', 'cash_on_delivery')
+        postal_code = valid_text(data, 'postalCode', 20, required=True)
+        note = valid_text(data, 'note', 500, required=True)
+        payment_method = data.get('paymentMethod')
         coupon_code = data.get('couponCode') if isinstance(data.get('couponCode'), str) else ''
         attempt_key = verify_attempt_key(data.get('attemptKey'))
-        if email and not re.fullmatch(r'[^\s@]+@[^\s@]+\.[^\s@]+', email):
-            return None, ({'error': 'Enter a valid email address or leave it blank.'}, 400)
+        if email and email is not False and not re.fullmatch(r'[^\s@]+@[^\s@]+\.[^\s@]+', email):
+            return None, ({'error': 'Enter a valid email address.'}, 400)
         if (not customer_name or customer_name is False or not phone or phone is False
-                or not address or address is False or not city or city is False):
-            return None, ({'error': 'Name, phone, delivery address, and city are required.'}, 400)
+                or not address or address is False or not city or city is False
+                or not email or email is False or not postal_code or postal_code is False
+                or not note or note is False):
+            return None, ({'error': 'Name, phone, email, delivery address, city, postal code, and delivery instructions are required.'}, 400)
+        if not DeliveryCity.query.filter_by(city_slug=slugify(city), active=True).first():
+            return None, ({'error': 'Choose a delivery city from the available Pakistan cities.'}, 400)
         if payment_method not in PAYMENT_METHODS:
             return None, ({'error': 'Choose a valid payment method.'}, 400)
         if not attempt_key:
@@ -1213,8 +1269,12 @@ def create_app():
 
     # -- admin auth ------------------------------------------------------------------
     def require_admin():
-        if not session.get('admin_id') or not db.session.get(Admin, session['admin_id']):
-            return jsonify({'error': 'Admin sign-in required'}), 401
+        admin_id = session.get('admin_id')
+        authenticated_at = session.get('admin_authenticated_at')
+        if (not admin_id or not db.session.get(Admin, admin_id) or not isinstance(authenticated_at, (int, float))
+                or datetime.now(timezone.utc).timestamp() - authenticated_at > 8 * 60 * 60):
+            session.clear()
+            return jsonify({'error': 'Admin sign-in required. Please enter your credentials again.'}), 401
         return None
 
     def current_admin_email():
@@ -1231,7 +1291,9 @@ def create_app():
         if not admin or len(data['password']) > 256 or not check_password_hash(admin.password_hash, data['password']):
             return jsonify({'error': 'Invalid email or password'}), 401
         session.clear()
+        session.permanent = False  # Browser-session cookie only; no remember-me login.
         session['admin_id'] = admin.id
+        session['admin_authenticated_at'] = datetime.now(timezone.utc).timestamp()
         return jsonify({'email': admin.email})
 
     @app.post('/api/admin/logout')
@@ -1242,6 +1304,11 @@ def create_app():
     @app.get('/api/admin/session')
     def admin_session():
         admin = db.session.get(Admin, session.get('admin_id')) if session.get('admin_id') else None
+        authenticated_at = session.get('admin_authenticated_at')
+        if (not admin or not isinstance(authenticated_at, (int, float))
+                or datetime.now(timezone.utc).timestamp() - authenticated_at > 8 * 60 * 60):
+            session.clear()
+            admin = None
         return jsonify({'authenticated': bool(admin), 'email': admin.email if admin else None})
 
     @app.get('/api/admin/dashboard')
@@ -1265,6 +1332,60 @@ def create_app():
             'revenue': sum(order.total for order in active_orders),
             'lowStock': sorted(low_stock, key=lambda row: row['stockQuantity'])[:10],
             'recentOrders': [order.as_dict() for order in sorted(orders, key=lambda o: o.created_at, reverse=True)[:5]],
+        })
+
+    @app.get('/api/admin/sales')
+    def admin_sales():
+        denied = require_admin()
+        if denied:
+            return denied
+        try:
+            days = int(request.args.get('days', '30'))
+        except (TypeError, ValueError):
+            return jsonify({'error': 'Choose a valid sales range.'}), 400
+        if days not in {7, 30, 90}:
+            return jsonify({'error': 'Sales range must be 7, 30, or 90 days.'}), 400
+        today = datetime.now(timezone.utc).date()
+        first_day = today - timedelta(days=days - 1)
+        prior_first_day = first_day - timedelta(days=days)
+        current_start = datetime.combine(first_day, datetime.min.time())
+        current_end = datetime.combine(today + timedelta(days=1), datetime.min.time())
+        previous_start = datetime.combine(prior_first_day, datetime.min.time())
+
+        current_filter = (Order.status != 'cancelled', Order.created_at >= current_start,
+                          Order.created_at < current_end)
+        previous_filter = (Order.status != 'cancelled', Order.created_at >= previous_start,
+                           Order.created_at < current_start)
+        current_orders, gross_revenue = db.session.query(
+            db.func.count(Order.id), db.func.coalesce(db.func.sum(Order.total), 0)
+        ).filter(*current_filter).one()
+        previous_orders, previous_revenue = db.session.query(
+            db.func.count(Order.id), db.func.coalesce(db.func.sum(Order.total), 0)
+        ).filter(*previous_filter).one()
+        daily = {(first_day + timedelta(days=offset)).isoformat(): {
+                    'date': (first_day + timedelta(days=offset)).isoformat(), 'orders': 0, 'revenue': 0}
+                 for offset in range(days)}
+        for order_date, count, revenue in db.session.query(
+                db.func.date(Order.created_at), db.func.count(Order.id),
+                db.func.coalesce(db.func.sum(Order.total), 0)).filter(*current_filter).group_by(
+                    db.func.date(Order.created_at)).all():
+            day = daily.get(str(order_date))
+            if day is not None:
+                day['orders'] = count
+                day['revenue'] = revenue
+        top_products = db.session.query(
+            OrderItem.product_name,
+            db.func.sum(OrderItem.quantity),
+            db.func.sum(OrderItem.unit_price * OrderItem.quantity),
+        ).join(Order, Order.id == OrderItem.order_id).filter(*current_filter).group_by(
+            OrderItem.product_name).order_by(db.func.sum(OrderItem.unit_price * OrderItem.quantity).desc()).limit(8).all()
+        return jsonify({
+            'days': days, 'orders': current_orders, 'revenue': gross_revenue,
+            'averageOrderValue': round(gross_revenue / current_orders) if current_orders else 0,
+            'previousRevenue': previous_revenue, 'previousOrders': previous_orders,
+            'daily': list(daily.values()),
+            'topProducts': [{'name': name, 'units': units, 'revenue': revenue}
+                            for name, units, revenue in top_products],
         })
 
     # -- admin orders ------------------------------------------------------------------
@@ -1342,6 +1463,8 @@ def create_app():
         if 'status' in data:
             if data['status'] not in ORDER_STATUSES:
                 return jsonify({'error': 'Invalid order status.'}), 400
+            if order.status == 'cancelled' and data['status'] != 'cancelled':
+                return jsonify({'error': 'Cancelled orders cannot be reopened. Create a new order instead.'}), 409
             if data['status'] == 'cancelled' and order.status != 'cancelled' and not order.stock_restored_at:
                 movements = OrderStockMovement.query.filter_by(order_id=order.id, restored_at=None).all()
                 for movement in movements:
@@ -1363,6 +1486,32 @@ def create_app():
             order.note = note or ''
         db.session.commit()
         return jsonify(order.as_dict())
+
+    @app.delete('/api/admin/orders/<order_number>')
+    def delete_admin_order(order_number):
+        denied = require_admin()
+        if denied:
+            return denied
+        order = Order.query.filter_by(order_number=order_number).first_or_404()
+        # Deleting an order voids its inventory reservation, whether or not it
+        # was cancelled through the normal status control first.
+        if not order.stock_restored_at:
+            movements = OrderStockMovement.query.filter_by(order_id=order.id, restored_at=None).all()
+            for movement in movements:
+                if movement.product_id:
+                    db.session.query(Product).filter_by(id=movement.product_id).update(
+                        {Product.stock_quantity: Product.stock_quantity + movement.quantity},
+                        synchronize_session=False)
+            if movements:
+                order.stock_restored_at = datetime.now(timezone.utc)
+        if order.coupon_code:
+            coupon = Coupon.query.filter_by(code=order.coupon_code).first()
+            if coupon and coupon.used_count > 0:
+                coupon.used_count -= 1
+        OrderStockMovement.query.filter_by(order_id=order.id).delete(synchronize_session=False)
+        db.session.delete(order)
+        db.session.commit()
+        return '', 204
 
     # -- admin products ---------------------------------------------------------------
     @app.post('/api/admin/products')
@@ -2002,6 +2151,8 @@ def create_app():
         password = os.environ.get('ADMIN_PASSWORD', '')
         if not email or not password:
             raise SystemExit('Set ADMIN_EMAIL and ADMIN_PASSWORD before running flask create-admin.')
+        if len(password) < 12 or len(password) > 256 or password.lower().startswith('replace-with-'):
+            raise SystemExit('ADMIN_PASSWORD must be a non-placeholder password between 12 and 256 characters.')
         if Admin.query.filter_by(email=email).first():
             raise SystemExit(f'Admin {email} already exists.')
         db.session.add(Admin(email=email, password_hash=generate_password_hash(password)))
@@ -2013,6 +2164,21 @@ def create_app():
         """Seed settings, cities, categories, and landing content (safe to rerun)."""
         ensure_store_defaults()
         print('Store settings, delivery cities, categories, and landing content are ready.')
+
+    @app.cli.command('verify-catalog')
+    def verify_catalog():
+        """Check that the complete starter catalog is present in the configured database."""
+        seed_file = Path(__file__).with_name('seed_products.json')
+        starter_rows = json.loads(seed_file.read_text(encoding='utf-8'))
+        expected_slugs = {row['slug'] for row in starter_rows}
+        present_slugs = {slug for (slug,) in db.session.query(Product.slug).all()}
+        missing_slugs = expected_slugs - present_slugs
+        state = db.session.get(CatalogState, 1)
+        actual = Product.query.count()
+        if not state or not state.initialized or missing_slugs:
+            missing = ', '.join(sorted(missing_slugs)[:5])
+            raise SystemExit(f'Catalog verification failed: initialized={bool(state and state.initialized)}, {len(expected_slugs) - len(missing_slugs)}/{len(expected_slugs)} starter products present, {actual} products total. Missing: {missing or "catalog initialization"}.')
+        print(f'Catalog verified: {len(expected_slugs)}/{len(expected_slugs)} starter products present ({actual} total) in {db.engine.url.get_backend_name()} database.')
 
     @app.cli.command('seed-catalog')
     def seed_catalog():

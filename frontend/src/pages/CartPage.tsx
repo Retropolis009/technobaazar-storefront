@@ -217,21 +217,23 @@ function CartPage({ products, quantities, onUpdateQuantity, onRemove, customer, 
               <p className="mt-1 text-xs leading-5 text-[#68736c]">{checkoutNote}</p>
               {!customer && <p className="mt-3 border border-[#e2e6df] bg-[#f5f6f2] p-3 text-xs leading-5 text-[#566159]">Checking out as a guest. <Link to="/account" className="font-semibold text-[#315ee8]">Sign in or create an account</Link> to track orders and sync your bag.</p>}
               <div className="mt-4 grid gap-4">
-                <label className="text-sm font-semibold">Full name<input required maxLength={160} autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} className="mt-1 h-11 w-full border border-[#cfd6ce] px-3 font-normal outline-none focus:border-[#315ee8]" /></label>
+                <label className="text-sm font-semibold">Full name <span className="text-red-700">*</span><input required maxLength={160} autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} className="mt-1 h-11 w-full border border-[#cfd6ce] px-3 font-normal outline-none focus:border-[#315ee8]" /></label>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="text-sm font-semibold">Phone<input required maxLength={40} autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="03xx xxxxxxx" className="mt-1 h-11 w-full border border-[#cfd6ce] px-3 font-normal outline-none focus:border-[#315ee8]" /></label>
-                  <label className="text-sm font-semibold">Email <span className="font-normal text-[#9aa29b]">(optional)</span><input type="email" maxLength={255} autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} className="mt-1 h-11 w-full border border-[#cfd6ce] px-3 font-normal outline-none focus:border-[#315ee8]" /></label>
+                  <label className="text-sm font-semibold">Phone <span className="text-red-700">*</span><input required maxLength={40} autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="03xx xxxxxxx" className="mt-1 h-11 w-full border border-[#cfd6ce] px-3 font-normal outline-none focus:border-[#315ee8]" /></label>
+                  <label className="text-sm font-semibold">Email <span className="text-red-700">*</span><input required type="email" maxLength={255} autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} className="mt-1 h-11 w-full border border-[#cfd6ce] px-3 font-normal outline-none focus:border-[#315ee8]" /></label>
                 </div>
-                <label className="text-sm font-semibold">Delivery address<textarea required maxLength={1000} autoComplete="street-address" rows={2} value={address} onChange={(event) => setAddress(event.target.value)} placeholder="House, street, area" className="mt-1 w-full border border-[#cfd6ce] p-3 font-normal outline-none focus:border-[#315ee8]" /></label>
+                <label className="text-sm font-semibold">Delivery address <span className="text-red-700">*</span><textarea required maxLength={1000} autoComplete="street-address" rows={2} value={address} onChange={(event) => setAddress(event.target.value)} placeholder="House, street, area" className="mt-1 w-full border border-[#cfd6ce] p-3 font-normal outline-none focus:border-[#315ee8]" /></label>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="text-sm font-semibold">City
-                    <input required maxLength={120} list="delivery-cities" autoComplete="address-level2" value={city} onChange={(event) => setCity(event.target.value)} placeholder="Karachi" className="mt-1 h-11 w-full border border-[#cfd6ce] px-3 font-normal outline-none focus:border-[#315ee8]" />
-                    <datalist id="delivery-cities">{settings.cities.map((entry) => <option key={entry.slug} value={entry.name}>{formatPKR(entry.fee)} delivery</option>)}</datalist>
+                  <label className="text-sm font-semibold">City <span className="text-red-700">*</span>
+                    <select required autoComplete="address-level2" value={city} onChange={(event) => { setCity(event.target.value); setCoupon(null) }} className="mt-1 h-11 w-full border border-[#cfd6ce] bg-white px-3 font-normal outline-none focus:border-[#315ee8]">
+                      <option value="">Select a Pakistan city</option>
+                      {settings.cities.map((entry) => <option key={entry.slug} value={entry.name}>{entry.name} · {formatPKR(entry.fee)} delivery</option>)}
+                    </select>
                   </label>
-                  <label className="text-sm font-semibold">Postal code <span className="font-normal text-[#9aa29b]">(optional)</span><input maxLength={20} autoComplete="postal-code" value={postalCode} onChange={(event) => setPostalCode(event.target.value)} className="mt-1 h-11 w-full border border-[#cfd6ce] px-3 font-normal outline-none focus:border-[#315ee8]" /></label>
+                  <label className="text-sm font-semibold">Postal code <span className="text-red-700">*</span><input required maxLength={20} autoComplete="postal-code" value={postalCode} onChange={(event) => setPostalCode(event.target.value)} placeholder="e.g. 75500" className="mt-1 h-11 w-full border border-[#cfd6ce] px-3 font-normal outline-none focus:border-[#315ee8]" /></label>
                 </div>
                 <fieldset>
-                  <legend className="text-sm font-semibold">Payment method</legend>
+                  <legend className="text-sm font-semibold">Payment method <span className="text-red-700">*</span></legend>
                   <div className="mt-2 grid gap-2">
                     {PAYMENT_METHODS.map((method) => (
                       <label key={method.value} className={`flex cursor-pointer items-start gap-3 border p-3 ${paymentMethod === method.value ? 'border-[#315ee8] bg-[#f4f6ff]' : 'border-[#dfe4dc]'}`}>
@@ -241,7 +243,7 @@ function CartPage({ products, quantities, onUpdateQuantity, onRemove, customer, 
                     ))}
                   </div>
                 </fieldset>
-                <label className="text-sm font-semibold">Order note <span className="font-normal text-[#9aa29b]">(optional)</span><input maxLength={500} value={note} onChange={(event) => setNote(event.target.value)} placeholder="Delivery instructions" className="mt-1 h-11 w-full border border-[#cfd6ce] px-3 font-normal outline-none focus:border-[#315ee8]" /></label>
+                <label className="text-sm font-semibold">Delivery instructions <span className="text-red-700">*</span><input required maxLength={500} value={note} onChange={(event) => setNote(event.target.value)} placeholder="Write ‘No special instructions’ if none" className="mt-1 h-11 w-full border border-[#cfd6ce] px-3 font-normal outline-none focus:border-[#315ee8]" /></label>
               </div>
               {error && <p role="alert" className="mt-4 text-sm text-red-700">{error}</p>}
               <button disabled={busy || !products.length} className="mt-4 h-12 w-full bg-[#142c24] font-semibold text-white transition hover:bg-[#315ee8] disabled:opacity-60">

@@ -10,13 +10,7 @@ interface SeoHeadProps {
   ogType?: string
   canonical?: string
   noIndex?: boolean
-  googleVerification?: string
-  bingVerification?: string
-  twitterHandle?: string
-  gaMeasurementId?: string
-  gtmId?: string
-  metaPixelId?: string
-  jsonLd?: string
+  settings?: Record<string, string>
 }
 
 function upsertMeta(attribute: 'name' | 'property', key: string, content: string) {
@@ -46,51 +40,13 @@ function upsertCanonical(url: string) {
   if (!existing) document.head.appendChild(link)
 }
 
-function upsertScript(id: string, src: string | null, inline: string | null) {
-  const existing = document.head.querySelector(`script[data-seo="${id}"]`)
-  if (!src && !inline) {
-    existing?.remove()
-    return
-  }
-  if (existing) return // already loaded; analytics snippets must not reload per page
-  const tag = document.createElement('script')
-  tag.setAttribute('data-seo', id)
-  if (src) {
-    tag.async = true
-    tag.src = src
-  } else if (inline) {
-    tag.textContent = inline
-  }
-  document.head.appendChild(tag)
-}
-
-function upsertJsonLd(payload: string) {
-  const existing = document.head.querySelector('script[data-seo="jsonld"]')
-  const trimmed = payload.trim()
-  if (!trimmed) {
-    existing?.remove()
-    return
-  }
-  const tag = existing ?? document.createElement('script')
-  tag.setAttribute('type', 'application/ld+json')
-  tag.setAttribute('data-seo', 'jsonld')
-  if (tag.textContent !== trimmed) tag.textContent = trimmed
-  if (!existing) document.head.appendChild(tag)
-}
-
 /** Keeps document title + meta/OG tags in sync with the current page (driven by the CMS SEO fields). */
-function SeoHead({
-  title, description, keywords = '', ogTitle = '', ogDescription = '', ogImage = '',
-  ogType = 'website', canonical = '', noIndex = false, googleVerification = '', bingVerification = '',
-  twitterHandle = '', gaMeasurementId = '', gtmId = '', metaPixelId = '', jsonLd = '',
-}: SeoHeadProps) {
+function SeoHead({ title, description, keywords = '', ogTitle = '', ogDescription = '', ogImage = '', ogType = 'website', canonical = '', noIndex = false, settings = {} }: SeoHeadProps) {
   useEffect(() => {
     document.title = title.trim() || 'TechnoBaazar'
     upsertMeta('name', 'description', description)
     upsertMeta('name', 'keywords', keywords)
     upsertMeta('name', 'robots', noIndex ? 'noindex, nofollow' : '')
-    upsertMeta('name', 'google-site-verification', googleVerification)
-    upsertMeta('name', 'msvalidate.01', bingVerification)
     upsertMeta('property', 'og:title', ogTitle || title)
     upsertMeta('property', 'og:description', ogDescription || description)
     upsertMeta('property', 'og:image', ogImage)
@@ -99,27 +55,55 @@ function SeoHead({
     upsertMeta('name', 'twitter:title', ogTitle || title)
     upsertMeta('name', 'twitter:description', ogDescription || description)
     upsertMeta('name', 'twitter:image', ogImage)
-    upsertMeta('name', 'twitter:site', twitterHandle)
+    upsertMeta('name', 'twitter:site', settings.seo_twitter_handle ?? '')
     upsertCanonical(canonical)
-    upsertJsonLd(jsonLd)
-  }, [title, description, keywords, ogTitle, ogDescription, ogImage, ogType, canonical, noIndex,
-    googleVerification, bingVerification, twitterHandle, jsonLd])
+    upsertMeta('name', 'google-site-verification', settings.seo_google_verification ?? '')
+    upsertMeta('name', 'msvalidate.01', settings.seo_bing_verification ?? '')
 
-  useEffect(() => {
-    const gaId = gaMeasurementId.trim()
-    upsertScript('ga-src', gaId ? `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(gaId)}` : null, null)
-    upsertScript('ga-inline', null, gaId
-      ? `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','${gaId.replace(/'/g, '')}');`
-      : null)
-    const container = gtmId.trim()
-    upsertScript('gtm-inline', null, container
-      ? `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s);j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${container.replace(/'/g, '')}');`
-      : null)
-    const pixel = metaPixelId.trim()
-    upsertScript('pixel-inline', null, pixel
-      ? `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${pixel.replace(/'/g, '')}');fbq('track','PageView');`
-      : null)
-  }, [gaMeasurementId, gtmId, metaPixelId])
+    const trackedNodes: HTMLElement[] = []
+    const addScript = (id: string, src: string, async = true) => {
+      const script = document.createElement('script')
+      script.id = id; script.src = src; script.async = async
+      document.head.appendChild(script); trackedNodes.push(script)
+    }
+    const analyticsId = settings.seo_google_analytics_id ?? ''
+    if (!noIndex && /^G-[A-Z0-9]+$/.test(analyticsId)) {
+      addScript('tb-google-analytics', `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(analyticsId)}`)
+      const config = document.createElement('script')
+      config.id = 'tb-google-analytics-config'
+      config.textContent = `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${analyticsId}');`
+      document.head.appendChild(config); trackedNodes.push(config)
+    }
+    const tagManagerId = settings.seo_google_tag_manager_id ?? ''
+    if (!noIndex && /^GTM-[A-Z0-9]+$/.test(tagManagerId)) addScript('tb-google-tag-manager', `https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(tagManagerId)}`)
+    const pixelId = settings.seo_meta_pixel_id ?? ''
+    if (!noIndex && /^[0-9]{5,20}$/.test(pixelId)) {
+      const pixel = document.createElement('script')
+      pixel.id = 'tb-meta-pixel'
+      pixel.textContent = `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${pixelId}');fbq('track','PageView');`
+      document.head.appendChild(pixel); trackedNodes.push(pixel)
+    }
+    if (!noIndex) {
+      const businessName = settings.seo_business_name || 'TechnoBaazar'
+      const sameAs = ['facebook', 'instagram', 'tiktok', 'youtube', 'x'].map(network => settings[`seo_social_${network}`]).filter(Boolean)
+      const structuredData = [
+        { '@context': 'https://schema.org', '@type': 'WebSite', name: businessName, url: canonical || settings.seo_canonical_base || undefined },
+        { '@context': 'https://schema.org', '@type': 'Store', name: businessName, legalName: settings.seo_business_legal_name || undefined,
+          url: settings.seo_canonical_base || undefined, logo: settings.seo_business_logo || undefined,
+          telephone: settings.seo_business_phone || undefined, email: settings.seo_business_email || undefined,
+          sameAs: sameAs.length ? sameAs : undefined,
+          address: settings.seo_business_street || settings.seo_business_city ? { '@type': 'PostalAddress',
+            streetAddress: settings.seo_business_street || undefined, addressLocality: settings.seo_business_city || undefined,
+            addressRegion: settings.seo_business_region || undefined, postalCode: settings.seo_business_postal_code || undefined,
+            addressCountry: settings.seo_business_country || 'PK' } : undefined },
+      ]
+      const jsonLd = document.createElement('script')
+      jsonLd.type = 'application/ld+json'; jsonLd.id = 'tb-business-jsonld'
+      jsonLd.textContent = JSON.stringify(structuredData).replace(/</g, '\\u003c')
+      document.head.appendChild(jsonLd); trackedNodes.push(jsonLd)
+    }
+    return () => trackedNodes.forEach(node => node.remove())
+  }, [title, description, keywords, ogTitle, ogDescription, ogImage, ogType, canonical, noIndex, settings])
 
   return null
 }
