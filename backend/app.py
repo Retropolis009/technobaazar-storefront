@@ -1568,6 +1568,16 @@ def create_app():
                 name = chr(65 + remainder) + name
             return name
 
+        def clean_spreadsheet_text(value):
+            text = '' if value is None else str(value)
+            return ''.join(
+                char for char in text
+                if char in '\t\n\r'
+                or 0x20 <= ord(char) <= 0xD7FF
+                or 0xE000 <= ord(char) <= 0xFFFD
+                or 0x10000 <= ord(char) <= 0x10FFFF
+            )
+
         worksheet = ET.Element(f'{{{main_ns}}}worksheet')
         sheet_data = ET.SubElement(worksheet, f'{{{main_ns}}}sheetData')
         for row_number, values in enumerate(rows, start=1):
@@ -1582,7 +1592,7 @@ def create_app():
                     cell.set('t', 'inlineStr')
                     inline = ET.SubElement(cell, f'{{{main_ns}}}is')
                     text = ET.SubElement(inline, f'{{{main_ns}}}t')
-                    text.text = '' if value is None else str(value)
+                    text.text = clean_spreadsheet_text(value)
                     if text.text[:1].isspace() or text.text[-1:].isspace():
                         text.set(f'{{{xml_ns}}}space', 'preserve')
 

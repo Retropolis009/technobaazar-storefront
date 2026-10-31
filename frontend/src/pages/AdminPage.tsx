@@ -247,7 +247,7 @@ function AdminPage({ products, onProductsChange }: Props) {
                 <Field label="Category" required><select required value={draft.category} onChange={event => setDraft({ ...draft, category: event.target.value })} className={`${inputClass} bg-white`}>{availableCategories.map(category => <option key={category.id} value={category.name}>{category.parentName ? `${category.parentName} / ${category.name}` : category.name}</option>)}</select></Field>
                 <Field label="Product URL slug" required hint={editing ? 'The published URL stays the same when editing this listing.' : 'Used in the product page URL.'}><input required readOnly={Boolean(editing)} maxLength={180} pattern="[A-Za-z0-9-]+" value={draft.slug} onChange={event => setDraft({ ...draft, slug: event.target.value })} className={`${inputClass} read-only:bg-[#f5f6f2] read-only:text-[#68736c]`}/></Field>
                 <Field label="Short detail line" hint="Displayed directly below the product name." ><input maxLength={300} value={draft.detail} onChange={event => setDraft({ ...draft, detail: event.target.value })} placeholder="Example: 16GB GDDR6 · Triple-fan cooling" className={inputClass}/></Field>
-                <Field label="Badge" hint="Use “New arrival”, “New listing”, or “Just landed” to include this product in the New Arrivals carousel."><input maxLength={100} value={draft.badge} onChange={event => setDraft({ ...draft, badge: event.target.value })} className={inputClass}/></Field>
+                <Field label="Badge" hint="Use “New arrival”, “New listing”, or “Just landed” to include this product; at least two tagged products are needed to show the carousel."><input maxLength={100} value={draft.badge} onChange={event => setDraft({ ...draft, badge: event.target.value })} className={inputClass}/></Field>
               </div>
             </section>
 
@@ -614,8 +614,10 @@ function OrdersSection({ onError }: { onError: (message: string) => void }) {
       const response = await fetch(`${apiUrl}/api/admin/orders/export.${format}?${params}`, { credentials: 'include' })
       if (!response.ok) throw new Error('Export failed.')
       const blob = await response.blob(), link = document.createElement('a')
-      link.href = URL.createObjectURL(blob); link.download = `technobaazar-orders.${format}`; link.click()
-      URL.revokeObjectURL(link.href)
+      const objectUrl = URL.createObjectURL(blob)
+      link.href = objectUrl; link.download = `technobaazar-orders.${format}`
+      document.body.appendChild(link); link.click(); link.remove()
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000)
     } catch (cause) { onError(cause instanceof Error ? cause.message : 'Could not export orders.') }
   }
 

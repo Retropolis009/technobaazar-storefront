@@ -69,11 +69,12 @@ function ProductPage({
           </div>
           {gallery.length > 1 && (
             <div className="mt-3 grid grid-cols-5 gap-3" role="tablist" aria-label="Product images">
-              {gallery.slice(0, 5).map((url, index) => (
+              {gallery.map((url, index) => (
                 <button
                   key={`${url}-${index}`}
                   type="button"
                   role="tab"
+                  aria-label={`Show product image ${index + 1} of ${gallery.length}`}
                   aria-selected={activeImage === index}
                   onClick={() => setActiveImage(index)}
                   className={`aspect-square overflow-hidden border bg-white ${activeImage === index ? 'border-[#2b64d8]' : 'border-[#e7eae4]'}`}

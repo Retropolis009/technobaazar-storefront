@@ -67,6 +67,7 @@ function ProductRoute({ products: catalog, favorites, content, onAddToCart, onTo
 
   return (
     <ProductPage
+      key={product.slug}
       product={product}
       relatedProducts={catalog.filter((item) => item.category === product.category && item.slug !== product.slug).slice(0, 4)}
       favorites={favorites}

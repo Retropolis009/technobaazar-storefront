@@ -158,6 +158,11 @@ a:focus-visible {
   scroll-snap-type: x mandatory;
 }
 
+.new-arrival-card {
+  flex: 0 0 calc((100% - 10px) / 2);
+  min-width: 0;
+}
+
 .new-arrivals-track::-webkit-scrollbar {
   display: none;
 }
@@ -286,6 +291,7 @@ a:focus-visible {
 }
 
 @media (min-width: 640px) {
+  .new-arrival-card { flex-basis: calc((100% - 20px) / 3); }
   .header-action-secondary { display: flex; }
   .section-heading { font-size: 32px; }
   .department-tile { min-height: 160px; padding: 20px; }
@@ -294,7 +300,16 @@ a:focus-visible {
   .benefit-item:last-child { border-right: 0; }
 }
 
+@media (min-width: 768px) {
+  .new-arrival-card { flex-basis: calc((100% - 30px) / 4); }
+}
+
+@media (min-width: 1024px) {
+  .new-arrival-card { flex-basis: calc((100% - 40px) / 5); }
+}
+
 @media (min-width: 1280px) {
+  .new-arrival-card { flex-basis: calc((100% - 50px) / 6); }
   .category-link-wide { display: flex; }
 }
 
