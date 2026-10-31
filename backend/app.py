@@ -870,6 +870,15 @@ def create_app():
         return key
 
     # -- public storefront API ------------------------------------------------------
+    @app.get('/api')
+    def api_root():
+        return jsonify({
+            'status': 'ok',
+            'health': '/api/health',
+            'catalog': '/api/catalog',
+            'products': '/api/products',
+        })
+
     @app.get('/api/health')
     def health():
         return jsonify({'status': 'ok'})
