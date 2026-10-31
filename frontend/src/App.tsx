@@ -95,6 +95,7 @@ function App() {
   const cartTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const cartCount = Object.values(cart).reduce((total, quantity) => total + quantity, 0)
   const isAdminRoute = location.pathname.startsWith('/admin')
+  const isCheckoutRoute = location.pathname === '/checkout'
 
   const visibleProducts = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase()
@@ -372,9 +373,9 @@ function App() {
   const pageActions = { products: catalog, favorites, content, categories: storeCategories, onAddToCart: addToCart, onToggleFavorite: toggleFavorite }
 
   return (
-    <div className="min-h-screen bg-[#f5f6f2] text-[#15201c]">
+    <div className="min-h-screen bg-white text-[#18212c]">
       <SeoHead {...pageSeo} settings={content as unknown as Record<string, string>} />
-      {!isAdminRoute && <SiteHeader
+      {!isAdminRoute && !isCheckoutRoute && <SiteHeader
         departments={activeDepartments}
         search={search}
         onSearchChange={setSearch}
@@ -456,7 +457,7 @@ function App() {
         <Route path="/account" element={<AccountPage customer={customer} onAuthenticated={handleAuthenticated} onLogout={handleLogout} />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
-      {!isAdminRoute && <SiteFooter content={content} />}
+      {!isAdminRoute && !isCheckoutRoute && <SiteFooter content={content} />}
       {!isAdminRoute && <ToastNotice message={notice} onDismiss={() => setNotice('')} />}
     </div>
   )

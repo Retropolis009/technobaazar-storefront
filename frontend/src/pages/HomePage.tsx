@@ -31,12 +31,6 @@ function HomePage({
   return (
     <main id="top">
       <HeroSection content={content} onSelectCategory={onSelectCollection} />
-      <DepartmentSection
-        departments={departments}
-        kicker={content.departments_kicker}
-        title={content.departments_title}
-        onSelectCategory={onSelectCollection}
-      />
       <FeaturedProducts
         favorites={favorites}
         products={products}
@@ -47,6 +41,12 @@ function HomePage({
         onAddToCart={onAddToCart}
         onClearFilters={onClearFilters}
         onToggleFavorite={onToggleFavorite}
+      />
+      <DepartmentSection
+        departments={departments}
+        kicker={content.departments_kicker}
+        title={content.departments_title}
+        onSelectCategory={onSelectCollection}
       />
       <ShoppingBenefits benefits={content.benefits} />
     </main>

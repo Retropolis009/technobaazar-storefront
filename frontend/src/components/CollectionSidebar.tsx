@@ -20,6 +20,8 @@ interface CollectionSidebarProps {
   minPrice: string
   maxPrice: string
   selectedBrands: string[]
+  availability: 'all' | 'in-stock' | 'out-of-stock'
+  onAvailabilityChange: (value: 'all' | 'in-stock' | 'out-of-stock') => void
   onMinPriceChange: (value: string) => void
   onMaxPriceChange: (value: string) => void
   onToggleBrand: (brand: string) => void
@@ -34,6 +36,8 @@ function CollectionSidebar({
   minPrice,
   maxPrice,
   selectedBrands,
+  availability,
+  onAvailabilityChange,
   onMinPriceChange,
   onMaxPriceChange,
   onToggleBrand,
@@ -43,9 +47,9 @@ function CollectionSidebar({
   const categoryItems = categories.length ? categories : fallbackCategories
   const parents = categoryItems.filter(category => category.parentId === null)
   return (
-    <div className="space-y-7 text-sm">
+    <div className="space-y-4 text-sm">
       <section aria-labelledby={`${idPrefix}-sidebar-categories`}>
-        <h2 id={`${idPrefix}-sidebar-categories`} className="mb-3 text-xs font-bold uppercase tracking-[0.12em]">Categories</h2>
+        <h2 id={`${idPrefix}-sidebar-categories`} className="mb-3 text-xs font-bold text-[#202832]">Categories</h2>
         <nav className="space-y-1" aria-label="Shop categories">
           <Link to="/collections/all-gear" aria-current={activeCategory === 'All gear' ? 'page' : undefined} className={`flex min-h-9 items-center justify-between border-l-2 px-3 text-xs transition ${activeCategory === 'All gear' ? 'border-[#315ee8] bg-white font-bold text-[#315ee8]' : 'border-transparent text-[#5c675f] hover:bg-white hover:text-[#15201c]'}`}>
             All gear<span className="text-[10px] text-[#9aa29b]">›</span>
@@ -70,7 +74,7 @@ function CollectionSidebar({
 
 
       <section aria-labelledby={`${idPrefix}-sidebar-price`}>
-        <h2 id={`${idPrefix}-sidebar-price`} className="mb-3 text-xs font-bold uppercase tracking-[0.12em]">Price range</h2>
+        <h2 id={`${idPrefix}-sidebar-price`} className="mb-3 text-xs font-bold text-[#202832]">Price range</h2>
         <div className="grid grid-cols-2 gap-2">
           <label className="text-[10px] font-semibold text-[#68736c]">
             Minimum
@@ -100,7 +104,7 @@ function CollectionSidebar({
       </section>
 
       <section aria-labelledby={`${idPrefix}-sidebar-brand`}>
-        <h2 id={`${idPrefix}-sidebar-brand`} className="mb-3 text-xs font-bold uppercase tracking-[0.12em]">Brand</h2>
+        <h2 id={`${idPrefix}-sidebar-brand`} className="mb-3 text-xs font-bold text-[#202832]">Brand</h2>
         <div className="max-h-52 space-y-2 overflow-y-auto pr-1">
           {brands.map((brand) => (
             <label key={brand} className="flex cursor-pointer items-center gap-2 text-xs text-[#4d5951]">
@@ -116,7 +120,15 @@ function CollectionSidebar({
         </div>
       </section>
 
-      <button type="button" onClick={onReset} className="text-xs font-semibold text-[#315ee8] underline underline-offset-4">
+      <section aria-labelledby={`${idPrefix}-sidebar-availability`}>
+        <h2 id={`${idPrefix}-sidebar-availability`} className="mb-3 text-xs font-bold text-[#202832]">Availability</h2>
+        <div className="space-y-2">
+          <label className="flex cursor-pointer items-center gap-2 text-xs text-[#4d5951]"><input type="checkbox" checked={availability === 'in-stock'} onChange={() => onAvailabilityChange(availability === 'in-stock' ? 'all' : 'in-stock')} className="size-4 accent-[#2b64d8]"/>In stock</label>
+          <label className="flex cursor-pointer items-center gap-2 text-xs text-[#4d5951]"><input type="checkbox" checked={availability === 'out-of-stock'} onChange={() => onAvailabilityChange(availability === 'out-of-stock' ? 'all' : 'out-of-stock')} className="size-4 accent-[#2b64d8]"/>Out of stock</label>
+        </div>
+      </section>
+
+      <button type="button" onClick={onReset} className="text-xs font-semibold text-[#2b64d8] underline underline-offset-4">
         Reset filters
       </button>
     </div>

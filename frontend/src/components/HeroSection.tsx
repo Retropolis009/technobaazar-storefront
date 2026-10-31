@@ -1,4 +1,4 @@
-import { ArrowRight, BadgeCheck, Cpu, ShieldCheck, Truck } from 'lucide-react'
+import { ArrowRight, BadgeCheck, ShieldCheck, Truck } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import type { LandingContent } from '../content'
 
@@ -23,51 +23,45 @@ function HeroSection({ content, onSelectCategory }: HeroSectionProps) {
     }
   }
 
-  return (
-    <section className="mx-auto max-w-[1440px] px-4 pb-7 pt-5 sm:px-7 sm:pt-7 lg:px-10 lg:pb-10">
-      <div className="relative grid overflow-hidden border border-[#dfe4dc] bg-white lg:min-h-[500px] lg:grid-cols-[1fr_1.08fr]">
-        <div className="relative z-10 flex flex-col items-start justify-center px-6 py-10 sm:px-10 sm:py-14 lg:px-14 xl:px-[72px]">
-          <p className="inline-flex items-center gap-2 rounded-sm bg-[#edf3ff] px-3 py-1.5 text-[10px] font-bold tracking-[0.15em] text-[#2451aa] sm:text-[11px]">
-            <span className="size-1.5 rounded-full bg-[#315ee8]" />{content.hero_eyebrow}
-          </p>
-          <h1 className="mt-5 max-w-[600px] font-display text-[42px] font-bold leading-[1.02] tracking-[-0.055em] sm:text-[58px] xl:text-[68px]">
-            {content.hero_title_top} {content.hero_title_bottom} <span className="text-[#315ee8]">{content.hero_title_accent}</span>
-          </h1>
-          <p className="mt-5 max-w-[460px] text-sm leading-6 text-[#5b665e] sm:text-base sm:leading-7">{content.hero_subtitle}</p>
-          <div className="mt-7 flex flex-wrap items-center gap-3">
-            <button type="button" onClick={handleCta} className="inline-flex h-12 items-center gap-3 rounded-sm bg-[#244fa7] px-5 text-sm font-bold text-white transition hover:bg-[#173d88]">
-              {content.hero_cta_text}<ArrowRight size={17}/>
-            </button>
-            <button type="button" onClick={() => onSelectCategory('All gear')} className="inline-flex h-12 items-center gap-2 px-3 text-sm font-bold text-[#243148] hover:text-[#315ee8]">
-              Shop all categories<ArrowRight size={15}/>
-            </button>
-          </div>
-          <p className="mt-7 inline-flex items-center gap-2 text-xs font-semibold text-[#59645d]"><BadgeCheck size={16} className="text-[#315ee8]"/>{content.hero_social_proof}</p>
-        </div>
+  const assurances = [
+    { icon: Truck, title: content.benefits[0]?.title ?? 'Nationwide delivery', detail: content.benefits[0]?.detail ?? content.delivery_note },
+    { icon: ShieldCheck, title: content.benefits[1]?.title ?? 'Trusted products', detail: content.benefits[1]?.detail ?? 'Clear details, no surprises.' },
+    { icon: BadgeCheck, title: content.benefits[2]?.title ?? 'Local support', detail: content.benefits[2]?.detail ?? 'Help when you need it.' },
+  ]
 
-        <div className="relative min-h-[270px] overflow-hidden bg-[#edf2fb] sm:min-h-[360px] lg:min-h-0">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_75%_40%,#fff_0,transparent_42%),linear-gradient(135deg,#eaf0fb,#dce6f6)]" aria-hidden="true"/>
-          <div className="pointer-events-none absolute right-8 top-8 size-44 rounded-full border border-[#315ee8]/10 sm:right-14 sm:top-12 sm:size-64" aria-hidden="true"/>
-          <img src={content.hero_image} alt={content.hero_image_alt} className="absolute inset-0 size-full object-cover object-center mix-blend-multiply" />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#edf2fb]/40 via-transparent to-[#142c24]/10" aria-hidden="true"/>
-          <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between gap-3 sm:bottom-7 sm:left-7 sm:right-7">
-            <div className="flex items-center gap-3 border border-white/70 bg-white/95 px-4 py-3 shadow-sm backdrop-blur-sm">
-              <span className="grid size-10 place-items-center rounded-sm bg-[#edf3ff] text-[#244fa7]"><Cpu size={20}/></span>
-              <span><span className="block text-[9px] font-bold uppercase tracking-[0.13em] text-[#647065]">{content.hero_card_kicker}</span><span className="mt-0.5 block text-sm font-bold text-[#15201c]">{content.hero_card_title}</span></span>
+  return (
+    <section className="bg-white" aria-label="Nationwide delivery">
+      <div className="delivery-hero relative isolate flex min-h-[370px] items-center overflow-hidden bg-[#05080e] sm:min-h-[440px] lg:min-h-[490px]">
+        <img src={content.hero_image} alt="" aria-hidden="true" className="absolute inset-0 -z-20 size-full object-cover object-center" fetchPriority="high" />
+        <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,#05080e_0%,rgba(5,8,14,.98)_25%,rgba(5,8,14,.76)_48%,rgba(5,8,14,.08)_100%)]" aria-hidden="true" />
+        <div className="mx-auto w-full max-w-[1440px] px-5 py-12 sm:px-10 lg:px-14">
+          <div className="max-w-[660px]">
+            <p className="inline-flex items-center gap-2 border border-[#f4c62b]/50 bg-black/30 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#f4c62b] sm:text-xs"><Truck size={14}/>{content.hero_eyebrow}</p>
+            <h1 className="mt-5 font-display text-[44px] font-extrabold uppercase leading-[0.94] tracking-[-0.055em] text-white sm:text-[64px] lg:text-[76px]">
+              <span className="block">{content.hero_title_top}</span>
+              <span className="mt-1 block text-[#f4c62b]">{content.hero_title_bottom}{content.hero_title_accent && <span className="ml-2 text-white">{content.hero_title_accent}</span>}</span>
+            </h1>
+            <p className="mt-5 max-w-[500px] text-sm leading-6 text-white/75 sm:text-base sm:leading-7">{content.hero_subtitle}</p>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <button type="button" onClick={handleCta} className="inline-flex h-12 items-center gap-3 bg-[#f4c62b] px-5 text-sm font-bold text-[#101418] transition hover:bg-[#ffda54]">{content.hero_cta_text}<ArrowRight size={17}/></button>
+              <button type="button" onClick={() => onSelectCategory('All gear')} className="inline-flex h-12 items-center border border-white/40 px-5 text-sm font-bold text-white transition hover:border-white hover:bg-white/10">Shop categories</button>
             </div>
-            <span className="hidden items-center gap-2 bg-[#244fa7] px-3 py-2 text-[10px] font-bold tracking-[0.08em] text-white sm:inline-flex"><ShieldCheck size={14}/>{content.hero_badge}</span>
+            <p className="mt-5 inline-flex items-center gap-2 text-xs font-medium text-white/65"><BadgeCheck size={15} className="text-[#f4c62b]"/>{content.hero_social_proof}</p>
           </div>
         </div>
+        <div className="pointer-events-none absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-[#f4c62b] via-[#f4c62b]/45 to-transparent" aria-hidden="true" />
       </div>
 
-      <div className="grid grid-cols-1 border-x border-b border-[#dfe4dc] bg-white sm:grid-cols-3">
-        {[
-          { icon: Truck, title: content.benefits[0]?.title ?? 'Delivery across Pakistan', detail: content.benefits[0]?.detail ?? content.delivery_note },
-          { icon: ShieldCheck, title: content.benefits[1]?.title ?? 'Warranty support', detail: content.benefits[1]?.detail ?? 'Shop with confidence.' },
-          { icon: BadgeCheck, title: content.benefits[2]?.title ?? 'Local customer care', detail: content.benefits[2]?.detail ?? 'We are here to help.' },
-        ].map(({ icon: Icon, title, detail }) => <div key={title} className="flex items-center gap-3 border-b border-[#edf0eb] px-4 py-3.5 last:border-b-0 sm:border-b-0 sm:border-r sm:px-5 sm:last:border-r-0">
-          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#edf3ff] text-[#244fa7]"><Icon size={17}/></span><span className="min-w-0"><strong className="block truncate text-xs text-[#18243a]">{title}</strong><span className="mt-0.5 block truncate text-[10px] text-[#6b756d]">{detail}</span></span>
+      <div className="mx-auto grid max-w-[1220px] border-b border-[#e4e6ea] bg-white px-4 sm:grid-cols-3 sm:px-6">
+        {assurances.map(({ icon: Icon, title, detail }, index) => <div key={`${title}-${index}`} className="flex items-center gap-3 border-b border-[#eff0f2] px-3 py-4 last:border-0 sm:border-b-0 sm:border-r sm:px-6 sm:py-5 sm:last:border-0">
+          <span className="grid size-10 shrink-0 place-items-center rounded-full border border-[#dfe2e7] text-[#1a2532]"><Icon size={19}/></span>
+          <span><strong className="block text-xs font-bold text-[#1d2733] sm:text-sm">{title}</strong><span className="mt-0.5 block text-[10px] leading-4 text-[#707984] sm:text-[11px]">{detail}</span></span>
         </div>)}
+      </div>
+      <div className="delivery-ticker overflow-hidden bg-[#151719] py-2.5 text-[#f4c62b]" aria-label="Delivery and payment information">
+        <div className="delivery-ticker-track flex w-max items-center gap-10 whitespace-nowrap text-[9px] font-bold uppercase tracking-[0.18em] sm:text-[10px]">
+          {[0, 1, 2, 3].map(index => <span key={index} aria-hidden={index !== 0} className="inline-flex items-center gap-3"><Truck size={13}/>{content.delivery_note}<span className="text-white/45">•</span>{content.payment_note}<span className="text-white/45">•</span>Shop TechnoBaazar</span>)}
+        </div>
       </div>
     </section>
   )

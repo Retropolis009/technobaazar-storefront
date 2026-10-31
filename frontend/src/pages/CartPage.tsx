@@ -114,7 +114,8 @@ function CartPage({ mode, products, quantities, onUpdateQuantity, onRemove, cust
   }
 
   if (placed) {
-    return <main id="top" className="mx-auto min-h-[65vh] max-w-[1120px] px-4 py-10 sm:px-7 sm:py-14 lg:px-10">
+    return <main id="top" className="mx-auto min-h-[65vh] max-w-[1120px] px-4 py-6 sm:px-7 sm:py-8 lg:px-10">
+      {isCheckout && <CheckoutHeader/>}
       <div className="mx-auto max-w-3xl border border-[#e1e6ed] bg-white p-6 text-center shadow-sm sm:p-10">
         <span className="mx-auto grid size-14 place-items-center rounded-full bg-[#eaf6ee] text-[#32804a]"><Check size={25}/></span>
         <p className="mt-5 text-xs font-bold uppercase tracking-[0.16em] text-[#32804a]">Order confirmed</p>
@@ -133,15 +134,17 @@ function CartPage({ mode, products, quantities, onUpdateQuantity, onRemove, cust
   }
 
   if (!products.length) {
-    return <main id="top" className="mx-auto min-h-[60vh] max-w-[1120px] px-4 py-10 sm:px-7 sm:py-14 lg:px-10">
-      <CheckoutSteps active={isCheckout ? 'checkout' : 'cart'} />
+    return <main id="top" className="mx-auto min-h-[60vh] max-w-[1120px] px-4 py-6 sm:px-7 sm:py-8 lg:px-10">
+      {isCheckout && <CheckoutHeader/>}
+      {!isCheckout && <CheckoutSteps active="cart" />}
       <div className="mt-8 border border-[#e1e6ed] bg-white px-6 py-14 text-center"><ShoppingBag size={30} className="mx-auto text-[#244fa7]"/><h1 className="mt-4 font-display text-2xl font-bold">Your cart is empty</h1><p className="mt-2 text-sm text-[#647184]">Add something to your cart before continuing to checkout.</p><Link to="/collections/all-gear" className="mt-5 inline-flex h-11 items-center gap-2 rounded-sm bg-[#244fa7] px-5 text-sm font-bold text-white">Browse the catalog<ArrowRight size={15}/></Link></div>
     </main>
   }
 
   return (
-    <main id="top" className="mx-auto min-h-[70vh] max-w-[1320px] px-4 py-8 sm:px-7 sm:py-10 lg:px-10">
-      <CheckoutSteps active={isCheckout ? 'checkout' : 'cart'} />
+    <main id="top" className="mx-auto min-h-[70vh] max-w-[1320px] px-4 py-6 sm:px-7 sm:py-8 lg:px-10">
+      {isCheckout && <CheckoutHeader/>}
+      {!isCheckout && <CheckoutSteps active="cart" />}
       <div className="mt-7 flex flex-wrap items-end justify-between gap-4 border-b border-[#e1e6ed] pb-5"><div><p className="section-kicker">{isCheckout ? 'Secure checkout' : 'Your selection'}</p><h1 className="font-display text-3xl font-bold tracking-[-0.04em] text-[#17243a] sm:text-4xl">{isCheckout ? 'Complete your order' : 'Your shopping cart'}</h1><p className="mt-2 text-sm text-[#647184]">{isCheckout ? 'Enter your delivery details and choose how you would like to pay.' : `${itemCount} ${itemCount === 1 ? 'item' : 'items'} ready for checkout.`}</p></div>{!isCheckout && <Link to="/collections/all-gear" className="inline-flex h-10 items-center gap-2 text-sm font-bold text-[#244fa7]"><ArrowLeft size={15}/>Continue shopping</Link>}</div>
 
       {!isCheckout ? (
@@ -176,6 +179,16 @@ function CartPage({ mode, products, quantities, onUpdateQuantity, onRemove, cust
       )}
     </main>
   )
+}
+
+function CheckoutHeader() {
+  return <header className="mb-6 flex h-14 items-center justify-between border-b border-[#e6e8eb]">
+    <Link to="/" className="flex flex-col leading-none" aria-label="TechnoBaazar home">
+      <span className="font-display text-[20px] font-extrabold tracking-[-0.08em] text-[#111820]">TECHNO<span className="text-[#d4a900]">BAAZAR</span></span>
+      <span className="mt-1 text-[8px] font-bold uppercase tracking-[0.2em] text-[#6d7580]">COMPUTERS &amp; TECH</span>
+    </Link>
+    <div className="flex items-center gap-2 text-[11px] font-semibold text-[#59616c]"><ShieldCheck size={15} className="text-[#287a43]"/><span className="hidden sm:inline">Secure checkout</span><span className="mx-1 h-5 border-l border-[#e0e2e5]"/><Link to="/cart" className="inline-flex items-center gap-1.5 hover:text-[#2459c5]"><ShoppingBag size={16}/>Cart</Link></div>
+  </header>
 }
 
 function CheckoutSteps({ active }: { active: 'cart' | 'checkout' }) {

@@ -26,12 +26,12 @@ function FeaturedProducts({
   onClearFilters,
   onToggleFavorite,
 }: FeaturedProductsProps) {
-  const displayProducts = search.trim() ? products : products.slice(0, 8)
+  const displayProducts = search.trim() ? products : products.slice(0, 12)
 
   return (
-    <section id="products" className="scroll-mt-40 border-y border-[#e2e6df] bg-[#f7f9fc] py-12 sm:py-16" aria-labelledby="products-title">
-      <div className="mx-auto max-w-[1440px] px-4 sm:px-7 lg:px-10">
-        <div className="flex flex-wrap items-end justify-between gap-4">
+    <section id="products" className="scroll-mt-40 bg-white py-9 sm:py-12" aria-labelledby="products-title">
+      <div className="mx-auto max-w-[1320px] px-4 sm:px-7 lg:px-10">
+        <div className="flex flex-wrap items-end justify-between gap-4 border-b border-[#e5e8ec] pb-4">
           <div>
             <p className="section-kicker">{kicker}</p>
             <h2 id="products-title" className="section-heading">{search.trim() ? `Results for “${search.trim()}”` : title}</h2>
@@ -39,12 +39,12 @@ function FeaturedProducts({
           </div>
           <div className="flex w-full items-center justify-between gap-4 sm:w-auto sm:justify-end">
             <p className="text-xs font-semibold text-[#68736c]">{products.length} {products.length === 1 ? 'item' : 'items'}</p>
-            {!search.trim() && <Link to="/collections/all-gear" className="inline-flex h-10 items-center gap-2 border border-[#c9d5eb] bg-white px-3 text-xs font-bold text-[#244fa7] transition hover:border-[#244fa7]">View full catalog<ArrowRight size={14}/></Link>}
+            {!search.trim() && <Link to="/collections/all-gear" className="inline-flex h-9 items-center gap-2 bg-[#2b64d8] px-3 text-xs font-bold text-white transition hover:bg-[#174ead]">See all products<ArrowRight size={14}/></Link>}
           </div>
         </div>
 
         {displayProducts.length > 0 ? (
-          <div className="mt-7 grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-x-5 sm:gap-y-8 md:grid-cols-3 xl:grid-cols-4">
+          <div className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {displayProducts.map((product) => (
               <ProductCard key={product.slug} product={product} isFavorite={favorites.includes(product.slug)} onAddToCart={onAddToCart} onToggleFavorite={onToggleFavorite} />
             ))}
