@@ -1,12 +1,12 @@
 import { Fragment, useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Boxes, ClipboardList, Download, Eye, ImagePlus, LayoutDashboard, LogOut, PackagePlus, PenLine, Plus, Search, Settings as SettingsIcon, ShieldCheck, Trash2, Truck, X } from 'lucide-react'
+import { Boxes, CalendarRange, CircleDollarSign, ClipboardList, Download, Eye, ImagePlus, Images, LayoutDashboard, LogOut, PackagePlus, PenLine, Plus, Search, Settings as SettingsIcon, ShieldCheck, ShoppingCart, Trash2, TrendingUp, Truck, X } from 'lucide-react'
 import { blankProductContent, type Product, type ProductContent } from '../catalog'
 import { DEFAULT_LANDING_CONTENT } from '../content'
 import { apiUrl, formatPKR, type AdminCoupon, type AdminSettings, type Category, type CategoryField, type ContentRevision, type DashboardStats, type MediaFile, type OrderSummary } from '../api'
 
 interface Props { products: Product[]; onProductsChange: (products: Product[]) => void }
-type Section = 'overview' | 'catalog' | 'orders' | 'content' | 'seo' | 'settings'
+type Section = 'overview' | 'catalog' | 'orders' | 'sales' | 'media' | 'content' | 'seo' | 'settings'
 type Draft = {
   slug: string; name: string; category: string; brand: string; price: string; compareAtPrice: string; badge: string
   detail: string; description: string; image: string; imageAlt: string; stockQuantity: string
@@ -36,6 +36,7 @@ async function adminFetch<T>(path: string, options: RequestInit = {}): Promise<T
 function AdminPage({ products, onProductsChange }: Props) {
   const navigate = useNavigate()
   const [authenticated, setAuthenticated] = useState(false)
+  const [sessionResetting, setSessionResetting] = useState(true)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -54,10 +55,16 @@ function AdminPage({ products, onProductsChange }: Props) {
     `${product.name} ${product.category} ${product.brand}`.toLowerCase().includes(query.toLowerCase())), [products, query, categoryFilter])
 
   useEffect(() => {
-    fetch(`${apiUrl}/api/admin/session`, { credentials: 'include' })
-      .then(response => response.ok ? response.json() : null)
-      .then(data => { if (data?.authenticated) { setAuthenticated(true); setEmail(data.email) } })
-      .catch(() => setError('Flask API is unavailable. Start the backend, then try signing in again.'))
+    // Require credentials on each dashboard visit rather than silently resuming
+    // a previous signed-in browser session. No credentials or tokens are stored
+    // in localStorage/sessionStorage.
+    fetch(`${apiUrl}/api/admin/logout`, { method: 'POST', credentials: 'include' })
+      .then(response => {
+        if (!response.ok) throw new Error('Could not reset the previous admin session.')
+        setAuthenticated(false); setEmail(''); setPassword('')
+      })
+      .catch(() => setError('Admin sign-in could not be secured. Confirm the Flask API is available over HTTPS.'))
+      .finally(() => setSessionResetting(false))
   }, [])
 
   useEffect(() => {
@@ -84,7 +91,7 @@ function AdminPage({ products, onProductsChange }: Props) {
     event.preventDefault()
     try {
       const data = await adminFetch<{ email: string }>('/api/admin/login', { method: 'POST', body: JSON.stringify({ email, password }) })
-      setAuthenticated(true); setEmail(data.email); setError('')
+      setAuthenticated(true); setEmail(data.email); setPassword(''); setError('')
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Sign-in failed.') }
   }
 
@@ -176,17 +183,19 @@ function AdminPage({ products, onProductsChange }: Props) {
 
   if (!authenticated) return <main className="grid min-h-[70vh] place-items-center px-4 py-16"><form onSubmit={login} className="w-full max-w-md border border-[#dfe4dc] bg-white p-8 shadow-sm">
     <div className="mb-5 grid h-12 w-12 place-items-center bg-[#e5eaff] text-[#315ee8]"><ShieldCheck /></div><p className="section-kicker">Restricted area</p><h1 className="font-display text-3xl font-bold">Admin sign in</h1><p className="mt-2 text-sm text-[#68736c]">Store staff only. Sign in to manage the catalog, orders, and landing content.</p>
-    <label className="mt-6 block text-sm font-semibold" htmlFor="admin-email">Admin email</label><input id="admin-email" type="email" autoComplete="username" value={email} onChange={event => setEmail(event.target.value)} className="mt-2 h-11 w-full border border-[#cfd6ce] px-3 outline-none focus:border-[#315ee8]" /><label className="mt-4 block text-sm font-semibold" htmlFor="admin-password">Admin password</label><input id="admin-password" type="password" autoComplete="current-password" value={password} onChange={event => setPassword(event.target.value)} className="mt-2 h-11 w-full border border-[#cfd6ce] px-3 outline-none focus:border-[#315ee8]" />
-    {error && <p role="alert" className="mt-3 text-sm text-red-700">{error}</p>}<button className="mt-5 h-11 w-full bg-[#142c24] font-semibold text-white hover:bg-[#315ee8]">Sign in</button><button type="button" onClick={() => navigate('/')} className="mt-4 w-full text-sm text-[#68736c]">Back to store</button>
+    <label className="mt-6 block text-sm font-semibold" htmlFor="admin-email">Admin email</label><input id="admin-email" type="email" autoComplete="off" value={email} onChange={event => setEmail(event.target.value)} className="mt-2 h-11 w-full border border-[#cfd6ce] px-3 outline-none focus:border-[#315ee8]" /><label className="mt-4 block text-sm font-semibold" htmlFor="admin-password">Admin password</label><input id="admin-password" type="password" autoComplete="off" value={password} onChange={event => setPassword(event.target.value)} className="mt-2 h-11 w-full border border-[#cfd6ce] px-3 outline-none focus:border-[#315ee8]" />
+    {error && <p role="alert" className="mt-3 text-sm text-red-700">{error}</p>}<button disabled={sessionResetting} className="mt-5 h-11 w-full bg-[#142c24] font-semibold text-white hover:bg-[#315ee8] disabled:opacity-60">{sessionResetting ? 'Securing sign-in…' : 'Sign in'}</button><button type="button" onClick={() => navigate('/')} className="mt-4 w-full text-sm text-[#68736c]">Back to store</button>
   </form></main>
 
   const sectionMeta: Record<Section, { title: string; note: string }> = {
     overview: { title: 'Overview', note: 'A quick look at your catalog, orders, and inventory.' },
     catalog: { title: 'Products', note: 'Manage products, prices, page content, and available stock.' },
-    orders: { title: 'Orders', note: 'Confirm, ship, and track customer orders.' },
+    orders: { title: 'Orders', note: 'Review each order clearly, update fulfillment, and remove void records.' },
+    sales: { title: 'Sales tracker', note: 'Monitor order volume, gross sales, and best-selling products.' },
+    media: { title: 'Image library', note: 'Upload, preview, copy, and remove storefront images.' },
     content: { title: 'Landing content', note: 'Edit the homepage, then publish when it looks right.' },
     seo: { title: 'SEO & growth', note: 'Manage search snippets, social cards, structured data, tracking, and product SEO.' },
-    settings: { title: 'Store settings', note: 'Delivery fees, coupons, categories, and media.' },
+    settings: { title: 'Store settings', note: 'Delivery fees, coupons, categories, and inventory thresholds.' },
   }
 
   return <main className="min-h-[80vh] bg-[#f5f6f2]"><div className="mx-auto flex max-w-[1440px] flex-col md:flex-row">
@@ -195,12 +204,14 @@ function AdminPage({ products, onProductsChange }: Props) {
         <NavButton active={section === 'overview'} onClick={() => setSection('overview')} icon={<LayoutDashboard size={17}/>} label="Overview" />
         <NavButton active={section === 'catalog'} onClick={() => setSection('catalog')} icon={<Boxes size={17}/>} label="Products" />
         <NavButton active={section === 'orders'} onClick={() => setSection('orders')} icon={<ClipboardList size={17}/>} label="Orders" />
+        <NavButton active={section === 'sales'} onClick={() => setSection('sales')} icon={<TrendingUp size={17}/>} label="Sales" />
+        <NavButton active={section === 'media'} onClick={() => setSection('media')} icon={<Images size={17}/>} label="Images" />
         <NavButton active={section === 'content'} onClick={() => setSection('content')} icon={<PenLine size={17}/>} label="Landing content" />
         <NavButton active={section === 'seo'} onClick={() => setSection('seo')} icon={<Search size={17}/>} label="SEO" />
         <NavButton active={section === 'settings'} onClick={() => setSection('settings')} icon={<SettingsIcon size={17}/>} label="Settings" />
       </nav>
       <button onClick={() => navigate('/')} className="mt-3 hidden px-3 py-3 text-left text-sm text-[#68736c] hover:text-[#315ee8] md:block">← Back to storefront</button>
-      <button onClick={async () => { try { await fetch(`${apiUrl}/api/admin/logout`, { method: 'POST', credentials: 'include' }) } finally { setAuthenticated(false); navigate('/admin') } }} className="mt-8 hidden items-center gap-3 px-3 py-3 text-sm text-[#68736c] hover:text-red-700 md:flex"><LogOut size={17}/>Sign out</button>
+      <button onClick={async () => { try { await fetch(`${apiUrl}/api/admin/logout`, { method: 'POST', credentials: 'include' }) } finally { setAuthenticated(false); setEmail(''); setPassword(''); navigate('/admin') } }} className="mt-3 flex items-center gap-3 px-3 py-3 text-sm text-[#68736c] hover:text-red-700"><LogOut size={17}/>Sign out</button>
     </aside>
     <div className="min-w-0 flex-1 p-5 sm:p-8">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4"><div><p className="section-kicker">Store operations</p><h1 className="font-display text-3xl font-bold">{sectionMeta[section].title}</h1><p className="mt-2 text-sm text-[#68736c]">{sectionMeta[section].note}</p></div>{section === 'catalog' && <button onClick={openCreate} className="inline-flex h-11 items-center gap-2 bg-[#142c24] px-4 text-sm font-semibold text-white hover:bg-[#315ee8]"><PackagePlus size={17}/>Add product</button>}</div>
@@ -213,6 +224,8 @@ function AdminPage({ products, onProductsChange }: Props) {
         products={products} onProductsChange={onProductsChange} onError={setError}
       />}
       {section === 'orders' && <OrdersSection onError={setError} />}
+      {section === 'sales' && <SalesSection onError={setError} />}
+      {section === 'media' && <MediaSection onError={setError} />}
       {section === 'content' && <ContentSection onError={setError} />}
       {section === 'seo' && <SEOSection products={products} onProductsChange={onProductsChange} onError={setError} />}
       {section === 'settings' && <SettingsSection onError={setError} onCategoriesChange={setAvailableCategories} />}
@@ -310,6 +323,37 @@ function AdminPage({ products, onProductsChange }: Props) {
       </div>
     </div>}
   </main>
+}
+
+// ---------------------------------------------------------------- sales ---
+interface SalesSnapshot {
+  days: number; orders: number; revenue: number; averageOrderValue: number
+  previousRevenue: number; previousOrders: number
+  daily: Array<{ date: string; orders: number; revenue: number }>
+  topProducts: Array<{ name: string; units: number; revenue: number }>
+}
+
+function SalesSection({ onError }: { onError: (message: string) => void }) {
+  const [days, setDays] = useState(30)
+  const [snapshot, setSnapshot] = useState<SalesSnapshot | null>(null)
+  const [busy, setBusy] = useState(true)
+  useEffect(() => {
+    setBusy(true)
+    adminFetch<SalesSnapshot>(`/api/admin/sales?days=${days}`)
+      .then(data => { setSnapshot(data); onError('') })
+      .catch(cause => onError(cause instanceof Error ? cause.message : 'Could not load sales data.'))
+      .finally(() => setBusy(false))
+  }, [days]) // eslint-disable-line react-hooks/exhaustive-deps
+  const maxRevenue = Math.max(1, ...(snapshot?.daily.map(day => day.revenue) ?? [0]))
+  const revenueDelta = snapshot && snapshot.previousRevenue > 0 ? Math.round((snapshot.revenue - snapshot.previousRevenue) / snapshot.previousRevenue * 100) : null
+  return <div className="space-y-5">
+    <div className="flex flex-wrap items-center justify-between gap-3 border border-[#dfe4dc] bg-white p-4"><div><h2 className="font-display text-lg font-bold">Sales at a glance</h2><p className="mt-1 text-xs text-[#68736c]">Gross value of non-cancelled orders; compare with the previous same-length period.</p></div><div className="flex gap-2" role="group" aria-label="Sales date range">{[7, 30, 90].map(range => <button key={range} type="button" onClick={() => setDays(range)} aria-pressed={days === range} className={`h-10 px-3 text-sm font-semibold ${days === range ? 'bg-[#142c24] text-white' : 'border border-[#cfd6ce] bg-white'}`}>{range} days</button>)}</div></div>
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><Stat title="Sales revenue" value={snapshot ? formatPKR(snapshot.revenue) : '—'} note={`${days} days · excluding cancelled orders`}/><Stat title="Orders" value={snapshot?.orders ?? '—'} note={`${snapshot?.previousOrders ?? 0} in previous period`}/><Stat title="Average order" value={snapshot ? formatPKR(snapshot.averageOrderValue) : '—'} note="Revenue divided by valid orders"/><Stat title="Revenue change" value={revenueDelta === null ? '—' : `${revenueDelta > 0 ? '+' : ''}${revenueDelta}%`} note={snapshot?.previousRevenue ? `vs. ${formatPKR(snapshot.previousRevenue)} previous period` : 'No prior-period sales to compare'} /></div>
+    <section className="border border-[#dfe4dc] bg-white p-5 sm:p-6"><div className="flex items-start justify-between gap-3"><div><h2 className="font-display text-lg font-bold">Daily sales</h2><p className="mt-1 text-xs text-[#68736c]">Revenue by order date · values in PKR</p></div><span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#315ee8]"><CircleDollarSign size={15}/>Sales</span></div>
+      {busy ? <p className="grid h-52 place-items-center text-sm text-[#68736c]">Loading sales…</p> : snapshot && <div className="mt-5 overflow-x-auto"><div className="flex h-56 min-w-[640px] items-end gap-1 border-b border-l border-[#dfe4dc] px-2 pt-4">{snapshot.daily.map((day, index) => { const height = day.revenue ? Math.max(4, day.revenue / maxRevenue * 100) : 1; const showLabel = index === 0 || index === snapshot.daily.length - 1 || index % (days === 7 ? 1 : days === 30 ? 5 : 15) === 0; return <div key={day.date} title={`${new Date(`${day.date}T00:00:00`).toLocaleDateString('en-PK', { day: 'numeric', month: 'short' })}: ${formatPKR(day.revenue)} · ${day.orders} orders`} className="group flex h-full min-w-0 flex-1 flex-col justify-end"><div className="w-full bg-[#315ee8] transition-colors group-hover:bg-[#142c24]" style={{ height: `${height}%`, minHeight: day.revenue ? '4px' : '1px' }}/>{showLabel && <span className="mt-2 -rotate-45 origin-top-left whitespace-nowrap text-[9px] text-[#68736c]">{new Date(`${day.date}T00:00:00`).toLocaleDateString('en-PK', { day: 'numeric', month: 'short' })}</span>}</div>})}</div></div>}
+    </section>
+    <section className="border border-[#dfe4dc] bg-white p-5 sm:p-6"><div className="flex items-center gap-2"><ShoppingCart size={17} className="text-[#315ee8]"/><h2 className="font-display text-lg font-bold">Top products</h2></div><p className="mt-1 text-xs text-[#68736c]">Ranked by gross product sales in the selected period.</p>{snapshot?.topProducts.length ? <div className="mt-4 overflow-x-auto"><table className="w-full min-w-[420px] text-left text-sm"><thead className="border-b border-[#edf0eb] text-xs uppercase tracking-wide text-[#68736c]"><tr><th className="py-3 pr-3">Product</th><th className="py-3 pr-3">Units</th><th className="py-3 text-right">Sales</th></tr></thead><tbody>{snapshot.topProducts.map(product => <tr key={product.name} className="border-b border-[#edf0eb]"><td className="py-3 pr-3 font-semibold">{product.name}</td><td className="py-3 pr-3">{product.units}</td><td className="py-3 text-right font-semibold">{formatPKR(product.revenue)}</td></tr>)}</tbody></table></div> : <p className="mt-4 border border-dashed border-[#cfd6ce] p-8 text-center text-sm text-[#68736c]">No completed sales in this date range yet.</p>}</section>
+  </div>
 }
 
 // ---------------------------------------------------------------- overview ---
@@ -457,35 +501,37 @@ function OrdersSection({ onError }: { onError: (message: string) => void }) {
   const [paymentStatus, setPaymentStatus] = useState('')
   const [expanded, setExpanded] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
+  const pageSize = 15
 
   async function load(targetPage = 1) {
     try {
-      const params = new URLSearchParams({ page: String(targetPage), pageSize: '15' })
+      const params = new URLSearchParams({ page: String(targetPage), pageSize: String(pageSize) })
       if (search.trim()) params.set('search', search.trim())
       if (status) params.set('status', status)
       if (paymentStatus) params.set('payment_status', paymentStatus)
       const data = await adminFetch<{ total: number; page: number; orders: OrderSummary[] }>(`/api/admin/orders?${params}`)
       setOrders(data.orders); setTotal(data.total); setPage(data.page); onError('')
-    } catch (cause) {
-      onError(cause instanceof Error ? cause.message : 'Could not load orders.')
-    }
+    } catch (cause) { onError(cause instanceof Error ? cause.message : 'Could not load orders.') }
   }
-
   useEffect(() => { void load(1) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function patchOrder(orderNumber: string, patch: Record<string, string>) {
     setBusy(orderNumber)
     try {
       const saved = await adminFetch<OrderSummary>(`/api/admin/orders/${orderNumber}`, { method: 'PATCH', body: JSON.stringify(patch) })
-      setOrders(current => current.map(order => order.orderNumber === orderNumber ? saved : order))
-      onError('')
-    } catch (cause) {
-      onError(cause instanceof Error ? cause.message : 'Could not update the order.')
-    } finally {
-      setBusy(null)
-    }
+      setOrders(current => current.map(order => order.orderNumber === orderNumber ? saved : order)); onError('')
+    } catch (cause) { onError(cause instanceof Error ? cause.message : 'Could not update the order.') }
+    finally { setBusy(null) }
   }
-
+  async function deleteOrder(order: OrderSummary) {
+    if (!window.confirm(`Permanently delete order ${order.orderNumber}? Any reserved stock will be returned. This cannot be undone.`)) return
+    setBusy(order.orderNumber)
+    try {
+      await adminFetch(`/api/admin/orders/${encodeURIComponent(order.orderNumber)}`, { method: 'DELETE' })
+      setExpanded(null); await load(Math.min(page, Math.max(1, Math.ceil((total - 1) / pageSize)))); onError('')
+    } catch (cause) { onError(cause instanceof Error ? cause.message : 'Could not delete the order.') }
+    finally { setBusy(null) }
+  }
   async function exportCsv() {
     try {
       const params = new URLSearchParams()
@@ -494,78 +540,50 @@ function OrdersSection({ onError }: { onError: (message: string) => void }) {
       if (paymentStatus) params.set('payment_status', paymentStatus)
       const response = await fetch(`${apiUrl}/api/admin/orders/export.csv?${params}`, { credentials: 'include' })
       if (!response.ok) throw new Error('Export failed.')
-      const blob = await response.blob()
-      const link = document.createElement('a')
-      link.href = URL.createObjectURL(blob)
-      link.download = 'technobaazar-orders.csv'
-      link.click()
+      const blob = await response.blob(), link = document.createElement('a')
+      link.href = URL.createObjectURL(blob); link.download = 'technobaazar-orders.csv'; link.click()
       URL.revokeObjectURL(link.href)
-    } catch (cause) {
-      onError(cause instanceof Error ? cause.message : 'Could not export orders.')
-    }
+    } catch (cause) { onError(cause instanceof Error ? cause.message : 'Could not export orders.') }
   }
 
-  const pages = Math.max(1, Math.ceil(total / 15))
-  return <>
-    <form onSubmit={(event) => { event.preventDefault(); void load(1) }} className="mb-4 grid gap-2 sm:grid-cols-[1fr_180px_200px_auto]">
-      <div className="flex items-center gap-2 border border-[#dfe4dc] bg-white px-3"><Search size={17} className="text-[#7a857d]"/><input aria-label="Search orders" value={search} onChange={event => setSearch(event.target.value)} placeholder="Search order, name, phone, email" className="h-11 min-w-0 flex-1 outline-none"/></div>
-      <select title="Filter by order status" aria-label="Filter by status" value={status} onChange={event => setStatus(event.target.value)} className="h-11 border border-[#dfe4dc] bg-white px-3 text-sm outline-none"><option value="">All statuses</option>{orderStatuses.map(value => <option key={value} value={value}>{value}</option>)}</select>
-      <select title="Filter by payment status" aria-label="Filter by payment" value={paymentStatus} onChange={event => setPaymentStatus(event.target.value)} className="h-11 border border-[#dfe4dc] bg-white px-3 text-sm outline-none"><option value="">All payments</option>{paymentStatuses.map(value => <option key={value} value={value}>{value.replaceAll('_', ' ')}</option>)}</select>
-      <div className="flex gap-2">
-        <button className="h-11 bg-[#142c24] px-4 text-sm font-semibold text-white hover:bg-[#315ee8]">Search</button>
-        <button type="button" onClick={exportCsv} title="Export CSV" className="grid h-11 w-11 place-items-center border border-[#cfd6ce] bg-white hover:border-[#315ee8]"><Download size={17}/></button>
-      </div>
+  const pages = Math.max(1, Math.ceil(total / pageSize))
+  return <div className="space-y-4">
+    <form onSubmit={event => { event.preventDefault(); void load(1) }} className="grid gap-3 border border-[#dfe4dc] bg-white p-4 md:grid-cols-[minmax(240px,1fr)_180px_190px_auto]">
+      <label className="flex h-11 items-center gap-2 border border-[#dfe4dc] px-3"><Search size={17} className="shrink-0 text-[#7a857d]"/><input aria-label="Search orders" value={search} onChange={event => setSearch(event.target.value)} placeholder="Order number, customer, phone, email" className="min-w-0 flex-1 outline-none"/></label>
+      <select aria-label="Filter by status" value={status} onChange={event => setStatus(event.target.value)} className="h-11 border border-[#dfe4dc] bg-white px-3 text-sm"><option value="">All statuses</option>{orderStatuses.map(value => <option key={value} value={value}>{value}</option>)}</select>
+      <select aria-label="Filter by payment" value={paymentStatus} onChange={event => setPaymentStatus(event.target.value)} className="h-11 border border-[#dfe4dc] bg-white px-3 text-sm"><option value="">All payments</option>{paymentStatuses.map(value => <option key={value} value={value}>{value.replaceAll('_', ' ')}</option>)}</select>
+      <div className="flex gap-2"><button className="h-11 flex-1 bg-[#142c24] px-4 text-sm font-semibold text-white hover:bg-[#315ee8]">Search</button><button type="button" onClick={() => void exportCsv()} title="Export CSV" aria-label="Export orders as CSV" className="grid h-11 w-11 shrink-0 place-items-center border border-[#cfd6ce] hover:border-[#315ee8]"><Download size={17}/></button></div>
     </form>
-    <p className="mb-3 text-xs text-[#68736c]">{total} orders · cancelling an order restores its stock automatically.</p>
-    <div className="overflow-x-auto border border-[#dfe4dc] bg-white">
-      <table className="w-full min-w-[900px] text-left text-sm">
-        <thead className="bg-[#f7f8f5] text-xs uppercase tracking-wide text-[#68736c]"><tr><th className="p-4">Order</th><th className="p-4">Customer</th><th className="p-4">Total</th><th className="p-4">Status</th><th className="p-4">Payment</th><th className="p-4">Details</th></tr></thead>
-        <tbody>{orders.map(order => <Fragment key={order.orderNumber}>
-          <tr className="border-t border-[#edf0eb]">
-            <td className="p-4"><strong>{order.orderNumber}</strong><span className="block text-xs font-normal text-[#68736c]">{new Date(order.createdAt).toLocaleString('en-PK')}</span></td>
-            <td className="p-4">{order.customerName}<span className="block text-xs font-normal text-[#68736c]">{order.city}</span></td>
-            <td className="p-4 font-semibold">{formatPKR(order.total)}</td>
-            <td className="p-4"><select aria-label={`Status for ${order.orderNumber}`} disabled={busy === order.orderNumber} value={order.status} onChange={event => void patchOrder(order.orderNumber, { status: event.target.value })} className="h-10 border border-[#dfe4dc] bg-white px-2 text-xs capitalize outline-none">{orderStatuses.map(value => <option key={value} value={value}>{value}</option>)}</select></td>
-            <td className="p-4"><select aria-label={`Payment for ${order.orderNumber}`} disabled={busy === order.orderNumber} value={order.paymentStatus} onChange={event => void patchOrder(order.orderNumber, { paymentStatus: event.target.value })} className="h-10 border border-[#dfe4dc] bg-white px-2 text-xs outline-none">{paymentStatuses.map(value => <option key={value} value={value}>{value.replaceAll('_', ' ')}</option>)}</select></td>
-            <td className="p-4"><button onClick={() => setExpanded(current => current === order.orderNumber ? null : order.orderNumber)} className="text-xs font-semibold text-[#315ee8]">{expanded === order.orderNumber ? 'Hide' : 'View'}</button></td>
-          </tr>
-          {expanded === order.orderNumber && <tr className="border-t border-[#edf0eb] bg-[#fafbf9]"><td colSpan={6} className="p-4 text-xs leading-6 text-[#566159]">
-            <OrderDetail orderNumber={order.orderNumber} />
-          </td></tr>}
-        </Fragment>)}</tbody>
-      </table>
-      {!orders.length && <p className="p-8 text-center text-sm text-[#68736c]">No matching orders.</p>}
+    <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-semibold">{total.toLocaleString('en-PK')} orders <span className="font-normal text-[#68736c]">· open an order for contact, delivery, items, and controls</span></p></div>
+    <div className="space-y-3">
+      {orders.map(order => {
+        const isOpen = expanded === order.orderNumber
+        return <article key={order.orderNumber} className="overflow-hidden border border-[#dfe4dc] bg-white shadow-sm">
+          <div className="grid gap-4 p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:p-5">
+            <div className="grid min-w-0 gap-3 sm:grid-cols-[minmax(180px,1.1fr)_minmax(160px,1fr)_auto] sm:items-center sm:gap-6">
+              <div className="min-w-0"><p className="truncate font-display text-lg font-bold">{order.orderNumber}</p><p className="mt-1 flex items-center gap-1.5 text-xs text-[#68736c]"><CalendarRange size={13}/>{new Date(order.createdAt).toLocaleString('en-PK')}</p></div>
+              <div className="min-w-0"><p className="truncate text-sm font-semibold">{order.customerName || 'Customer'}</p><p className="mt-1 truncate text-xs text-[#68736c]">{order.phone || 'No phone'} · {order.city || 'No city'}</p></div>
+              <div className="flex items-center gap-2"><span className={`rounded-full px-2.5 py-1 text-[11px] font-bold capitalize ${order.status === 'cancelled' ? 'bg-red-50 text-red-700' : order.status === 'delivered' ? 'bg-green-50 text-green-700' : 'bg-blue-50 text-blue-700'}`}>{order.status}</span><strong className="whitespace-nowrap text-base">{formatPKR(order.total)}</strong></div>
+            </div>
+            <div className="flex items-center gap-2 sm:justify-end"><button type="button" onClick={() => setExpanded(isOpen ? null : order.orderNumber)} aria-expanded={isOpen} className="h-10 flex-1 border border-[#cfd6ce] px-4 text-sm font-semibold hover:border-[#315ee8] sm:flex-none">{isOpen ? 'Close details' : 'Order details'}</button><button type="button" onClick={() => void deleteOrder(order)} disabled={busy === order.orderNumber} aria-label={`Delete order ${order.orderNumber}`} title="Delete order" className="grid size-10 shrink-0 place-items-center border border-red-200 text-red-700 hover:bg-red-50 disabled:opacity-50"><Trash2 size={16}/></button></div>
+          </div>
+          {isOpen && <div className="border-t border-[#e7eae4] bg-[#fafbf9] p-4 sm:p-6">
+            <div className="grid gap-5 xl:grid-cols-[1fr_1.2fr_1fr]">
+              <section><h3 className="text-xs font-bold uppercase tracking-wider text-[#68736c]">Customer & delivery</h3><dl className="mt-3 space-y-2 text-sm"><DetailRow label="Name" value={order.customerName}/><DetailRow label="Phone" value={order.phone}/><DetailRow label="Email" value={order.email || '—'}/><DetailRow label="City" value={order.city}/><DetailRow label="Address" value={order.address}/><DetailRow label="Postal code" value={order.postalCode || '—'}/>{order.note && <DetailRow label="Note" value={order.note}/>}</dl></section>
+              <section><h3 className="text-xs font-bold uppercase tracking-wider text-[#68736c]">Items & totals</h3><ul className="mt-3 divide-y divide-[#e7eae4] border-y border-[#e7eae4]">{order.items.map((item, index) => <li key={`${item.slug ?? item.name}-${index}`} className="flex justify-between gap-3 py-2 text-sm"><span className="min-w-0">{item.name}<span className="ml-2 text-xs text-[#68736c]">× {item.quantity}</span></span><strong className="whitespace-nowrap">{formatPKR(item.unitPrice * item.quantity)}</strong></li>)}</ul><dl className="mt-3 space-y-1.5 text-sm"><DetailRow label="Subtotal" value={formatPKR(order.subtotal ?? order.total)}/>{(order.discountAmount ?? 0) > 0 && <DetailRow label={`Coupon ${order.couponCode ?? ''}`} value={`− ${formatPKR(order.discountAmount ?? 0)}`}/>}<DetailRow label="Delivery" value={(order.shipping ?? 0) ? formatPKR(order.shipping ?? 0) : 'Free'}/><DetailRow label="Order total" value={formatPKR(order.total)} strong/></dl></section>
+              <section><h3 className="text-xs font-bold uppercase tracking-wider text-[#68736c]">Fulfillment & payment</h3><div className="mt-3 grid gap-4"><label className="text-xs font-semibold text-[#68736c]">Order status<select aria-label={`Status for ${order.orderNumber}`} disabled={busy === order.orderNumber} value={order.status} onChange={event => void patchOrder(order.orderNumber, { status: event.target.value })} className="mt-1 h-11 w-full border border-[#cfd6ce] bg-white px-3 text-sm capitalize text-[#15201c]">{orderStatuses.filter(value => order.status !== 'cancelled' || value === 'cancelled').map(value => <option key={value} value={value}>{value}</option>)}</select></label><label className="text-xs font-semibold text-[#68736c]">Payment status<select aria-label={`Payment status for ${order.orderNumber}`} disabled={busy === order.orderNumber} value={order.paymentStatus} onChange={event => void patchOrder(order.orderNumber, { paymentStatus: event.target.value })} className="mt-1 h-11 w-full border border-[#cfd6ce] bg-white px-3 text-sm capitalize text-[#15201c]">{paymentStatuses.map(value => <option key={value} value={value}>{value.replaceAll('_', ' ')}</option>)}</select></label><div className="border border-[#e7eae4] bg-white p-3 text-sm"><span className="text-xs uppercase tracking-wider text-[#68736c]">Method</span><p className="mt-1 font-semibold">{order.paymentMethod === 'bank_transfer_manual' ? 'Bank transfer' : 'Cash on delivery'}</p></div><button type="button" onClick={() => void deleteOrder(order)} disabled={busy === order.orderNumber} className="h-10 border border-red-200 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50">Permanently delete order</button></div></section>
+            </div>
+          </div>}
+        </article>
+      })}
+      {!orders.length && <div className="border border-dashed border-[#cfd6ce] bg-white p-12 text-center"><ClipboardList size={28} className="mx-auto text-[#98a29a]"/><p className="mt-3 text-sm font-semibold">No orders match those filters.</p><p className="mt-1 text-xs text-[#68736c]">Clear a filter or search by order number, customer, or phone.</p></div>}
     </div>
-    <div className="mt-4 flex items-center justify-between text-sm">
-      <button disabled={page <= 1} onClick={() => void load(page - 1)} className="h-10 border border-[#cfd6ce] bg-white px-4 font-semibold disabled:opacity-40">Previous</button>
-      <span className="text-xs text-[#68736c]">Page {page} of {pages}</span>
-      <button disabled={page >= pages} onClick={() => void load(page + 1)} className="h-10 border border-[#cfd6ce] bg-white px-4 font-semibold disabled:opacity-40">Next</button>
-    </div>
-  </>
+    <div className="flex items-center justify-between border-t border-[#dfe4dc] pt-4 text-sm"><button disabled={page <= 1} onClick={() => void load(page - 1)} className="h-10 border border-[#cfd6ce] bg-white px-4 font-semibold disabled:opacity-40">Previous</button><span className="text-xs text-[#68736c]">Page {page} of {pages}</span><button disabled={page >= pages} onClick={() => void load(page + 1)} className="h-10 border border-[#cfd6ce] bg-white px-4 font-semibold disabled:opacity-40">Next</button></div>
+  </div>
 }
 
-function OrderDetail({ orderNumber }: { orderNumber: string }) {
-  const [order, setOrder] = useState<(OrderSummary & { customerName: string; phone: string; email: string; address: string; city: string; postalCode: string; note: string; subtotal: number; discountAmount: number; shipping: number; couponCode: string }) | null>(null)
-  useEffect(() => {
-    adminFetch<{ orders: typeof order[] }>(`/api/admin/orders?search=${encodeURIComponent(orderNumber)}&pageSize=1`)
-      .then(data => setOrder(data.orders[0] ?? null))
-      .catch(() => setOrder(null))
-  }, [orderNumber])
-  if (!order) return <span>Loading…</span>
-  return <div className="grid gap-4 sm:grid-cols-2">
-    <div>
-      <p className="font-bold uppercase tracking-wider text-[#68736c]">Delivery</p>
-      <p className="mt-1">{order.customerName} · {order.phone}{order.email ? ` · ${order.email}` : ''}</p>
-      <p>{order.address}{order.city ? `, ${order.city}` : ''}{order.postalCode ? ` ${order.postalCode}` : ''}</p>
-      {order.note && <p className="mt-1 italic">Note: {order.note}</p>}
-      <p className="mt-1">{order.paymentMethod === 'bank_transfer_manual' ? 'Bank transfer' : 'Cash on delivery'} · {order.paymentStatus.replaceAll('_', ' ')}</p>
-    </div>
-    <div>
-      <p className="font-bold uppercase tracking-wider text-[#68736c]">Items</p>
-      <ul className="mt-1">{order.items.map((item, index) => <li key={index}>{item.name} × {item.quantity} — {formatPKR(item.unitPrice * item.quantity)}</li>)}</ul>
-      <p className="mt-2">Subtotal {formatPKR(order.subtotal)}{order.discountAmount > 0 ? ` · Discount −${formatPKR(order.discountAmount)} (${order.couponCode})` : ''} · Delivery {order.shipping === 0 ? 'Free' : formatPKR(order.shipping)} · <strong>Total {formatPKR(order.total)}</strong></p>
-    </div>
-  </div>
+function DetailRow({ label, value, strong = false }: { label: string; value?: string | number; strong?: boolean }) {
+  return <div className="grid grid-cols-[90px_minmax(0,1fr)] gap-2"><dt className="text-[#68736c]">{label}</dt><dd className={`${strong ? 'font-bold' : 'font-medium'} break-words text-right`}>{value || '—'}</dd></div>
 }
 
 // ----------------------------------------------------------------- content ---
@@ -747,7 +765,6 @@ function ContentSection({ onError }: { onError: (message: string) => void }) {
           <button onClick={discard} disabled={busy !== '' || !hasDraft} className="h-11 border border-[#cfd6ce] px-5 text-sm font-semibold disabled:opacity-60">{busy === 'discard' ? 'Discarding…' : 'Discard draft'}</button>
         </div>
       </div>
-      <MediaSection onError={onError} />
     </div>
     <aside className="space-y-5 xl:sticky xl:top-5">
       <div className="border border-[#dfe4dc] bg-white p-5">
@@ -1173,7 +1190,8 @@ function MediaSection({ onError }: { onError: (message: string) => void }) {
   useEffect(() => { void load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function upload(event: FormEvent<HTMLInputElement>) {
-    const file = event.currentTarget.files?.[0]
+    const input = event.currentTarget
+    const file = input.files?.[0]
     if (!file) return
     setBusy(true)
     try {
@@ -1188,7 +1206,7 @@ function MediaSection({ onError }: { onError: (message: string) => void }) {
       onError(cause instanceof Error ? cause.message : 'Upload failed.')
     } finally {
       setBusy(false)
-      event.currentTarget.value = ''
+      input.value = ''
     }
   }
 

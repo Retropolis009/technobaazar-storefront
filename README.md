@@ -118,8 +118,11 @@ Two equivalent tracks, kept in the same order:
 - Production backend checklist: `APP_ENV=production`, PostgreSQL
   (`DATABASE_URL`), a unique random `FLASK_SECRET_KEY`, HTTPS everywhere,
   exact `FRONTEND_ORIGIN`, `AUTO_CREATE_TABLES=false`, and `TRUSTED_PROXY_HOPS`
-  when behind a reverse proxy. Outside production, localhost and https sandbox
-  preview origins are accepted for mutations to keep hosted previews testable.
+  when behind a TLS-terminating reverse proxy. Admin API and dashboard access
+  reject plain HTTP in production, set secure HttpOnly session cookies, and
+  require credentials again on each dashboard visit (no persistent browser
+  token). `create-admin` rejects placeholder or shorter-than-12-character
+  passwords. Localhost HTTP is allowed only for local development.
 
 ## Admin dashboard
 
@@ -129,8 +132,13 @@ Open `/admin` and sign in through the Flask API:
 - **Products** — search, category filters, add/edit/delete, compare-at prices,
   stock tracking toggle, and per-product page content (eyebrow, subtitle,
   gallery, intro highlight, info notes).
-- **Orders** — search/filter, status + payment updates (cancelling restores
-  stock), order details, and CSV export.
+- **Orders** — readable order cards with customer, delivery, items, totals, and
+  fulfillment separated into clear sections; search and filters; status/payment
+  updates; CSV export; and confirmed deletion (reserved stock is restored).
+- **Sales tracker** — 7/30/90-day revenue, order counts, average order value,
+  previous-period comparison, daily sales chart, and best sellers.
+- **Images** — a dedicated media library to upload, preview, copy, and delete
+  storefront images. New uploads live in `backend/images/` (or `UPLOAD_DIR`).
 - **Landing content** — edit the announcement bar, hero, section headings,
   benefits, and checkout notes as a draft, then publish; revision history
   with restore.
@@ -143,10 +151,13 @@ Open `/admin` and sign in through the Flask API:
 
 ## Customer checkout
 
-Shoppers check out as guests or signed-in customers: quantity steppers, coupon
-codes, city-wise delivery fees with an optional free-delivery threshold, cash
-on delivery or manual bank transfer, and an idempotent order confirmation
-screen. Signed-in customers keep their bag, favorites, and order history.
+Shoppers check out as guests or signed-in customers. Name, phone, email, delivery
+address, selected Pakistan city, postal code, and payment method are required;
+order notes and coupons remain optional. City-wise delivery fees, coupon-aware
+totals, cash on delivery or manual bank transfer, and an idempotent order
+confirmation are supported. Signed-in customers keep their bag, favorites, and
+order history. Run `flask --app app seed-store` after deploying to populate new
+and additional Pakistan delivery cities.
 
 ## Frontend scripts (run inside `frontend/`)
 

@@ -6,7 +6,7 @@ import json
 import os
 import re
 import threading
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from uuid import uuid4
 from urllib.parse import urlparse
@@ -156,6 +156,20 @@ DELIVERY_CITIES_SEED = [
     ('mardan', 'Mardan', 400), ('gujrat', 'Gujrat', 400), ('sahiwal', 'Sahiwal', 400),
     ('okara', 'Okara', 400), ('wah-cantt', 'Wah Cantt', 400), ('jhelum', 'Jhelum', 400),
     ('mirpur', 'Mirpur', 450), ('gilgit', 'Gilgit', 500), ('muzaffarabad', 'Muzaffarabad', 500),
+    ('larkana', 'Larkana', 400), ('sheikhupura', 'Sheikhupura', 400),
+    ('rahim-yar-khan', 'Rahim Yar Khan', 400), ('jhang', 'Jhang', 400),
+    ('dera-ghazi-khan', 'Dera Ghazi Khan', 400), ('kasur', 'Kasur', 400),
+    ('nawabshah', 'Nawabshah', 400), ('mirpur-khas', 'Mirpur Khas', 400),
+    ('khairpur', 'Khairpur', 400), ('turbat', 'Turbat', 500), ('gwadar', 'Gwadar', 500),
+    ('mingora', 'Mingora', 450), ('skardu', 'Skardu', 500), ('hunza', 'Hunza', 500),
+    ('dera-ismail-khan', 'Dera Ismail Khan', 450), ('kohat', 'Kohat', 450),
+    ('nowshera', 'Nowshera', 400), ('mansehra', 'Mansehra', 450),
+    ('chiniot', 'Chiniot', 400), ('tando-adam', 'Tando Adam', 400),
+    ('bahawalnagar', 'Bahawalnagar', 400), ('burewala', 'Burewala', 400),
+    ('vehari', 'Vehari', 400), ('attock', 'Attock', 400), ('chakwal', 'Chakwal', 400),
+    ('hafizabad', 'Hafizabad', 400), ('mandi-bahauddin', 'Mandi Bahauddin', 400),
+    ('pakpattan', 'Pakpattan', 400), ('tando-allahyar', 'Tando Allahyar', 400),
+    ('umerkot', 'Umerkot', 450), ('jacobabad', 'Jacobabad', 450), ('shikarpur', 'Shikarpur', 450),
 ]
 
 UPLOAD_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp', '.gif'}
@@ -501,19 +515,30 @@ def create_app():
     trusted_proxy_hops = int(os.environ.get('TRUSTED_PROXY_HOPS', '0'))
     if not 0 <= trusted_proxy_hops <= 5:
         raise RuntimeError('TRUSTED_PROXY_HOPS must be between 0 and 5.')
-    if production and (not secret_key or secret_key == 'dev-only-change-me'):
+    if production and (not secret_key or len(secret_key) < 32 or secret_key in {'dev-only-change-me', 'replace-with-a-long-random-secret'}):
         raise RuntimeError('Set a unique FLASK_SECRET_KEY before starting in production.')
-    upload_dir = os.environ.get('UPLOAD_DIR') or str(Path(__file__).with_name('uploads'))
-    Path(upload_dir).mkdir(parents=True, exist_ok=True)
+    image_dir = Path(__file__).with_name('images')
+    legacy_upload_dir = Path(__file__).with_name('uploads')
+    configured_upload_dir = os.environ.get('UPLOAD_DIR', '').strip()
+    if configured_upload_dir:
+        upload_dir = Path(configured_upload_dir)
+    elif legacy_upload_dir.is_dir() and any(legacy_upload_dir.iterdir()):
+        # Keep existing installations' uploaded media working after the folder
+        # naming change; fresh checkouts use backend/images/.
+        upload_dir = legacy_upload_dir
+    else:
+        upload_dir = image_dir
+    upload_dir.mkdir(parents=True, exist_ok=True)
     app.config.update(
         SECRET_KEY=secret_key or 'dev-only-change-me',
         SQLALCHEMY_DATABASE_URI=os.environ.get('DATABASE_URL', 'sqlite:///store.db'),
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         MAX_CONTENT_LENGTH=UPLOAD_MAX_BYTES + 1024 * 1024,
         SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_PATH='/',
         SESSION_COOKIE_SAMESITE='Lax',
         SESSION_COOKIE_SECURE=production or any(origin.startswith('https://') for origin in allowed_origins),
-        UPLOAD_DIR=upload_dir,
+        UPLOAD_DIR=str(upload_dir),
     )
     db.init_app(app)
     migrate.init_app(app, db)
@@ -523,6 +548,8 @@ def create_app():
 
     @app.before_request
     def enforce_origin_for_mutations():
+        if production and (request.path.startswith('/api/admin') or request.path.startswith('/admin')) and not request.is_secure:
+            return jsonify({'error': 'Admin access requires HTTPS. Configure trusted proxy headers if TLS terminates upstream.'}), 426
         if request.method in {'POST', 'PUT', 'PATCH', 'DELETE'}:
             if not origin_allowed(request.headers.get('Origin'), allowed_origins, production):
                 return jsonify({'error': 'Request origin is not allowed.'}), 403
@@ -1009,19 +1036,22 @@ def create_app():
         """Shared Nutikals-style checkout for guests and signed-in customers."""
         customer_name = valid_text(data, 'customerName', 160, required=True)
         phone = valid_text(data, 'phone', 40, required=True)
-        email = valid_text(data, 'email', 255) or ''
+        email = valid_text(data, 'email', 255, required=True)
         address = valid_text(data, 'address', 1000, required=True)
         city = valid_text(data, 'city', 120, required=True)
-        postal_code = valid_text(data, 'postalCode', 20) or ''
+        postal_code = valid_text(data, 'postalCode', 20, required=True)
         note = valid_text(data, 'note', 500) or ''
-        payment_method = data.get('paymentMethod', 'cash_on_delivery')
+        payment_method = data.get('paymentMethod')
         coupon_code = data.get('couponCode') if isinstance(data.get('couponCode'), str) else ''
         attempt_key = verify_attempt_key(data.get('attemptKey'))
-        if email and not re.fullmatch(r'[^\s@]+@[^\s@]+\.[^\s@]+', email):
-            return None, ({'error': 'Enter a valid email address or leave it blank.'}, 400)
+        if email and email is not False and not re.fullmatch(r'[^\s@]+@[^\s@]+\.[^\s@]+', email):
+            return None, ({'error': 'Enter a valid email address.'}, 400)
         if (not customer_name or customer_name is False or not phone or phone is False
-                or not address or address is False or not city or city is False):
-            return None, ({'error': 'Name, phone, delivery address, and city are required.'}, 400)
+                or not address or address is False or not city or city is False
+                or not email or email is False or not postal_code or postal_code is False):
+            return None, ({'error': 'Name, phone, email, delivery address, city, and postal code are required.'}, 400)
+        if not DeliveryCity.query.filter_by(city_slug=slugify(city), active=True).first():
+            return None, ({'error': 'Choose a delivery city from the available Pakistan cities.'}, 400)
         if payment_method not in PAYMENT_METHODS:
             return None, ({'error': 'Choose a valid payment method.'}, 400)
         if not attempt_key:
@@ -1225,8 +1255,12 @@ def create_app():
 
     # -- admin auth ------------------------------------------------------------------
     def require_admin():
-        if not session.get('admin_id') or not db.session.get(Admin, session['admin_id']):
-            return jsonify({'error': 'Admin sign-in required'}), 401
+        admin_id = session.get('admin_id')
+        authenticated_at = session.get('admin_authenticated_at')
+        if (not admin_id or not db.session.get(Admin, admin_id) or not isinstance(authenticated_at, (int, float))
+                or datetime.now(timezone.utc).timestamp() - authenticated_at > 8 * 60 * 60):
+            session.clear()
+            return jsonify({'error': 'Admin sign-in required. Please enter your credentials again.'}), 401
         return None
 
     def current_admin_email():
@@ -1243,7 +1277,9 @@ def create_app():
         if not admin or len(data['password']) > 256 or not check_password_hash(admin.password_hash, data['password']):
             return jsonify({'error': 'Invalid email or password'}), 401
         session.clear()
+        session.permanent = False  # Browser-session cookie only; no remember-me login.
         session['admin_id'] = admin.id
+        session['admin_authenticated_at'] = datetime.now(timezone.utc).timestamp()
         return jsonify({'email': admin.email})
 
     @app.post('/api/admin/logout')
@@ -1254,6 +1290,11 @@ def create_app():
     @app.get('/api/admin/session')
     def admin_session():
         admin = db.session.get(Admin, session.get('admin_id')) if session.get('admin_id') else None
+        authenticated_at = session.get('admin_authenticated_at')
+        if (not admin or not isinstance(authenticated_at, (int, float))
+                or datetime.now(timezone.utc).timestamp() - authenticated_at > 8 * 60 * 60):
+            session.clear()
+            admin = None
         return jsonify({'authenticated': bool(admin), 'email': admin.email if admin else None})
 
     @app.get('/api/admin/dashboard')
@@ -1277,6 +1318,60 @@ def create_app():
             'revenue': sum(order.total for order in active_orders),
             'lowStock': sorted(low_stock, key=lambda row: row['stockQuantity'])[:10],
             'recentOrders': [order.as_dict() for order in sorted(orders, key=lambda o: o.created_at, reverse=True)[:5]],
+        })
+
+    @app.get('/api/admin/sales')
+    def admin_sales():
+        denied = require_admin()
+        if denied:
+            return denied
+        try:
+            days = int(request.args.get('days', '30'))
+        except (TypeError, ValueError):
+            return jsonify({'error': 'Choose a valid sales range.'}), 400
+        if days not in {7, 30, 90}:
+            return jsonify({'error': 'Sales range must be 7, 30, or 90 days.'}), 400
+        today = datetime.now(timezone.utc).date()
+        first_day = today - timedelta(days=days - 1)
+        prior_first_day = first_day - timedelta(days=days)
+        current_start = datetime.combine(first_day, datetime.min.time())
+        current_end = datetime.combine(today + timedelta(days=1), datetime.min.time())
+        previous_start = datetime.combine(prior_first_day, datetime.min.time())
+
+        current_filter = (Order.status != 'cancelled', Order.created_at >= current_start,
+                          Order.created_at < current_end)
+        previous_filter = (Order.status != 'cancelled', Order.created_at >= previous_start,
+                           Order.created_at < current_start)
+        current_orders, gross_revenue = db.session.query(
+            db.func.count(Order.id), db.func.coalesce(db.func.sum(Order.total), 0)
+        ).filter(*current_filter).one()
+        previous_orders, previous_revenue = db.session.query(
+            db.func.count(Order.id), db.func.coalesce(db.func.sum(Order.total), 0)
+        ).filter(*previous_filter).one()
+        daily = {(first_day + timedelta(days=offset)).isoformat(): {
+                    'date': (first_day + timedelta(days=offset)).isoformat(), 'orders': 0, 'revenue': 0}
+                 for offset in range(days)}
+        for order_date, count, revenue in db.session.query(
+                db.func.date(Order.created_at), db.func.count(Order.id),
+                db.func.coalesce(db.func.sum(Order.total), 0)).filter(*current_filter).group_by(
+                    db.func.date(Order.created_at)).all():
+            day = daily.get(str(order_date))
+            if day is not None:
+                day['orders'] = count
+                day['revenue'] = revenue
+        top_products = db.session.query(
+            OrderItem.product_name,
+            db.func.sum(OrderItem.quantity),
+            db.func.sum(OrderItem.unit_price * OrderItem.quantity),
+        ).join(Order, Order.id == OrderItem.order_id).filter(*current_filter).group_by(
+            OrderItem.product_name).order_by(db.func.sum(OrderItem.unit_price * OrderItem.quantity).desc()).limit(8).all()
+        return jsonify({
+            'days': days, 'orders': current_orders, 'revenue': gross_revenue,
+            'averageOrderValue': round(gross_revenue / current_orders) if current_orders else 0,
+            'previousRevenue': previous_revenue, 'previousOrders': previous_orders,
+            'daily': list(daily.values()),
+            'topProducts': [{'name': name, 'units': units, 'revenue': revenue}
+                            for name, units, revenue in top_products],
         })
 
     # -- admin orders ------------------------------------------------------------------
@@ -1354,6 +1449,8 @@ def create_app():
         if 'status' in data:
             if data['status'] not in ORDER_STATUSES:
                 return jsonify({'error': 'Invalid order status.'}), 400
+            if order.status == 'cancelled' and data['status'] != 'cancelled':
+                return jsonify({'error': 'Cancelled orders cannot be reopened. Create a new order instead.'}), 409
             if data['status'] == 'cancelled' and order.status != 'cancelled' and not order.stock_restored_at:
                 movements = OrderStockMovement.query.filter_by(order_id=order.id, restored_at=None).all()
                 for movement in movements:
@@ -1375,6 +1472,32 @@ def create_app():
             order.note = note or ''
         db.session.commit()
         return jsonify(order.as_dict())
+
+    @app.delete('/api/admin/orders/<order_number>')
+    def delete_admin_order(order_number):
+        denied = require_admin()
+        if denied:
+            return denied
+        order = Order.query.filter_by(order_number=order_number).first_or_404()
+        # Deleting an order voids its inventory reservation, whether or not it
+        # was cancelled through the normal status control first.
+        if not order.stock_restored_at:
+            movements = OrderStockMovement.query.filter_by(order_id=order.id, restored_at=None).all()
+            for movement in movements:
+                if movement.product_id:
+                    db.session.query(Product).filter_by(id=movement.product_id).update(
+                        {Product.stock_quantity: Product.stock_quantity + movement.quantity},
+                        synchronize_session=False)
+            if movements:
+                order.stock_restored_at = datetime.now(timezone.utc)
+        if order.coupon_code:
+            coupon = Coupon.query.filter_by(code=order.coupon_code).first()
+            if coupon and coupon.used_count > 0:
+                coupon.used_count -= 1
+        OrderStockMovement.query.filter_by(order_id=order.id).delete(synchronize_session=False)
+        db.session.delete(order)
+        db.session.commit()
+        return '', 204
 
     # -- admin products ---------------------------------------------------------------
     @app.post('/api/admin/products')
@@ -2014,6 +2137,8 @@ def create_app():
         password = os.environ.get('ADMIN_PASSWORD', '')
         if not email or not password:
             raise SystemExit('Set ADMIN_EMAIL and ADMIN_PASSWORD before running flask create-admin.')
+        if len(password) < 12 or len(password) > 256 or password.lower().startswith('replace-with-'):
+            raise SystemExit('ADMIN_PASSWORD must be a non-placeholder password between 12 and 256 characters.')
         if Admin.query.filter_by(email=email).first():
             raise SystemExit(f'Admin {email} already exists.')
         db.session.add(Admin(email=email, password_hash=generate_password_hash(password)))
