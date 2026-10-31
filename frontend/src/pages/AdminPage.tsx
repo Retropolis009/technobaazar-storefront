@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Boxes, CalendarRange, CircleDollarSign, ClipboardList, Download, Eye, ImagePlus, Images, LayoutDashboard, LogOut, PackagePlus, PenLine, Plus, Search, Settings as SettingsIcon, ShieldCheck, ShoppingCart, Trash2, TrendingUp, Truck, X } from 'lucide-react'
+import { Boxes, CalendarRange, CircleDollarSign, ClipboardList, Copy, Download, Eye, FileImage, HardDrive, ImagePlus, Images, LayoutDashboard, LogOut, PackagePlus, PenLine, Plus, Search, Settings as SettingsIcon, ShieldCheck, ShoppingCart, Trash2, TrendingUp, Truck, X } from 'lucide-react'
 import { blankProductContent, type Product, type ProductContent } from '../catalog'
 import { DEFAULT_LANDING_CONTENT } from '../content'
 import { apiUrl, formatPKR, type AdminCoupon, type AdminSettings, type Category, type CategoryField, type ContentRevision, type DashboardStats, type MediaFile, type OrderSummary } from '../api'
@@ -344,15 +344,84 @@ function SalesSection({ onError }: { onError: (message: string) => void }) {
       .catch(cause => onError(cause instanceof Error ? cause.message : 'Could not load sales data.'))
       .finally(() => setBusy(false))
   }, [days]) // eslint-disable-line react-hooks/exhaustive-deps
-  const maxRevenue = Math.max(1, ...(snapshot?.daily.map(day => day.revenue) ?? [0]))
   const revenueDelta = snapshot && snapshot.previousRevenue > 0 ? Math.round((snapshot.revenue - snapshot.previousRevenue) / snapshot.previousRevenue * 100) : null
   return <div className="space-y-5">
     <div className="flex flex-wrap items-center justify-between gap-3 border border-[#dfe4dc] bg-white p-4"><div><h2 className="font-display text-lg font-bold">Sales at a glance</h2><p className="mt-1 text-xs text-[#68736c]">Gross value of non-cancelled orders; compare with the previous same-length period.</p></div><div className="flex gap-2" role="group" aria-label="Sales date range">{[7, 30, 90].map(range => <button key={range} type="button" onClick={() => setDays(range)} aria-pressed={days === range} className={`h-10 px-3 text-sm font-semibold ${days === range ? 'bg-[#142c24] text-white' : 'border border-[#cfd6ce] bg-white'}`}>{range} days</button>)}</div></div>
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><Stat title="Sales revenue" value={snapshot ? formatPKR(snapshot.revenue) : '—'} note={`${days} days · excluding cancelled orders`}/><Stat title="Orders" value={snapshot?.orders ?? '—'} note={`${snapshot?.previousOrders ?? 0} in previous period`}/><Stat title="Average order" value={snapshot ? formatPKR(snapshot.averageOrderValue) : '—'} note="Revenue divided by valid orders"/><Stat title="Revenue change" value={revenueDelta === null ? '—' : `${revenueDelta > 0 ? '+' : ''}${revenueDelta}%`} note={snapshot?.previousRevenue ? `vs. ${formatPKR(snapshot.previousRevenue)} previous period` : 'No prior-period sales to compare'} /></div>
     <section className="border border-[#dfe4dc] bg-white p-5 sm:p-6"><div className="flex items-start justify-between gap-3"><div><h2 className="font-display text-lg font-bold">Daily sales</h2><p className="mt-1 text-xs text-[#68736c]">Revenue by order date · values in PKR</p></div><span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#315ee8]"><CircleDollarSign size={15}/>Sales</span></div>
-      {busy ? <p className="grid h-52 place-items-center text-sm text-[#68736c]">Loading sales…</p> : snapshot && <div className="mt-5 overflow-x-auto"><div className="flex h-56 min-w-[640px] items-end gap-1 border-b border-l border-[#dfe4dc] px-2 pt-4">{snapshot.daily.map((day, index) => { const height = day.revenue ? Math.max(4, day.revenue / maxRevenue * 100) : 1; const showLabel = index === 0 || index === snapshot.daily.length - 1 || index % (days === 7 ? 1 : days === 30 ? 5 : 15) === 0; return <div key={day.date} title={`${new Date(`${day.date}T00:00:00`).toLocaleDateString('en-PK', { day: 'numeric', month: 'short' })}: ${formatPKR(day.revenue)} · ${day.orders} orders`} className="group flex h-full min-w-0 flex-1 flex-col justify-end"><div className="w-full bg-[#315ee8] transition-colors group-hover:bg-[#142c24]" style={{ height: `${height}%`, minHeight: day.revenue ? '4px' : '1px' }}/>{showLabel && <span className="mt-2 -rotate-45 origin-top-left whitespace-nowrap text-[9px] text-[#68736c]">{new Date(`${day.date}T00:00:00`).toLocaleDateString('en-PK', { day: 'numeric', month: 'short' })}</span>}</div>})}</div></div>}
+      {busy ? <p className="grid h-64 place-items-center text-sm text-[#68736c]">Loading sales…</p> : snapshot && <SalesLineChart daily={snapshot.daily} />}
     </section>
     <section className="border border-[#dfe4dc] bg-white p-5 sm:p-6"><div className="flex items-center gap-2"><ShoppingCart size={17} className="text-[#315ee8]"/><h2 className="font-display text-lg font-bold">Top products</h2></div><p className="mt-1 text-xs text-[#68736c]">Ranked by gross product sales in the selected period.</p>{snapshot?.topProducts.length ? <div className="mt-4 overflow-x-auto"><table className="w-full min-w-[420px] text-left text-sm"><thead className="border-b border-[#edf0eb] text-xs uppercase tracking-wide text-[#68736c]"><tr><th className="py-3 pr-3">Product</th><th className="py-3 pr-3">Units</th><th className="py-3 text-right">Sales</th></tr></thead><tbody>{snapshot.topProducts.map(product => <tr key={product.name} className="border-b border-[#edf0eb]"><td className="py-3 pr-3 font-semibold">{product.name}</td><td className="py-3 pr-3">{product.units}</td><td className="py-3 text-right font-semibold">{formatPKR(product.revenue)}</td></tr>)}</tbody></table></div> : <p className="mt-4 border border-dashed border-[#cfd6ce] p-8 text-center text-sm text-[#68736c]">No completed sales in this date range yet.</p>}</section>
+  </div>
+}
+
+function SalesLineChart({ daily }: { daily: SalesSnapshot['daily'] }) {
+  const [activeDate, setActiveDate] = useState<string | null>(null)
+  const width = 1000
+  const height = 300
+  const left = 88
+  const right = 20
+  const top = 24
+  const bottom = 48
+  const plotWidth = width - left - right
+  const plotHeight = height - top - bottom
+  const maximum = Math.max(1, ...daily.map(day => day.revenue))
+  const points = daily.map((day, index) => ({
+    ...day,
+    x: left + (daily.length <= 1 ? plotWidth / 2 : (index / (daily.length - 1)) * plotWidth),
+    y: top + plotHeight - (day.revenue / maximum) * plotHeight,
+  }))
+  const line = points.map(point => `${point.x},${point.y}`).join(' ')
+  const first = points[0]
+  const last = points[points.length - 1]
+  const area = first && last ? `${line} ${last.x},${top + plotHeight} ${first.x},${top + plotHeight}` : ''
+  const activePoint = points.find(point => point.date === activeDate)
+  const dateLabel = (value: string) => new Date(`${value}T00:00:00`).toLocaleDateString('en-PK', { day: 'numeric', month: 'short' })
+  const compactPKR = (value: number) => new Intl.NumberFormat('en-PK', {
+    style: 'currency', currency: 'PKR', notation: 'compact', maximumFractionDigits: 1,
+  }).format(value)
+  const xLabelCount = daily.length <= 7 ? daily.length : 5
+  const xLabelIndices = new Set(Array.from({ length: xLabelCount }, (_, index) =>
+    Math.round(index * Math.max(0, daily.length - 1) / Math.max(1, xLabelCount - 1))))
+
+  if (!daily.length) return <p className="mt-5 grid h-56 place-items-center border border-dashed border-[#dfe4dc] text-sm text-[#68736c]">No daily sales data for this period.</p>
+
+  return <div className="mt-4">
+    <div className="relative" onPointerMove={event => {
+      const bounds = event.currentTarget.getBoundingClientRect()
+      const pointerX = (event.clientX - bounds.left) / bounds.width * width
+      const pointerY = (event.clientY - bounds.top) / bounds.height * height
+      const nearest = points.reduce((best, point) => Math.hypot(point.x - pointerX, point.y - pointerY) < Math.hypot(best.x - pointerX, best.y - pointerY) ? point : best, points[0])
+      if (nearest) setActiveDate(nearest.date)
+    }} onPointerLeave={() => setActiveDate(null)}>
+      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Daily sales revenue line chart" className="block w-full overflow-visible">
+        <defs><linearGradient id="sales-area-gradient" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#315ee8" stopOpacity="0.2"/><stop offset="100%" stopColor="#315ee8" stopOpacity="0.01"/></linearGradient></defs>
+        {[0, 1, 2, 3].map(tick => {
+          const fraction = tick / 3
+          const y = top + plotHeight - fraction * plotHeight
+          const value = maximum * fraction
+          return <g key={tick}>
+            <line x1={left} x2={width - right} y1={y} y2={y} stroke="#e9ede7" strokeDasharray={tick === 0 ? undefined : '4 6'} />
+            <text x={left - 12} y={y + 4} textAnchor="end" className="fill-[#7b857d]" fontSize="12">{compactPKR(value)}</text>
+          </g>
+        })}
+        {area && <polygon points={area} fill="url(#sales-area-gradient)" />}
+        {points.length > 1 && <polyline points={line} fill="none" stroke="#315ee8" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />}
+        {points.map(point => <g key={point.date} onFocus={() => setActiveDate(point.date)} onBlur={() => setActiveDate(null)} tabIndex={0} role="img" aria-label={`${dateLabel(point.date)}: ${formatPKR(point.revenue)}, ${point.orders} orders`} className="cursor-crosshair outline-none">
+          <circle cx={point.x} cy={point.y} r="5" fill="transparent" />
+          <circle cx={point.x} cy={point.y} r={activeDate === point.date ? 6 : 4} fill="white" stroke="#315ee8" strokeWidth="3" vectorEffect="non-scaling-stroke" />
+        </g>)}
+        {[...xLabelIndices].map(index => {
+          const point = points[index]
+          return point ? <text key={point.date} x={point.x} y={height - 12} textAnchor="middle" className="fill-[#7b857d]" fontSize="12">{dateLabel(point.date)}</text> : null
+        })}
+      </svg>
+      {activePoint && <div role="status" className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-[115%] whitespace-nowrap border border-[#dfe4dc] bg-white px-3 py-2 text-xs shadow-lg" style={{ left: `clamp(120px, ${activePoint.x / width * 100}%, calc(100% - 120px))`, top: `${Math.max(9, activePoint.y / height * 100)}%` }}>
+        <p className="font-semibold text-[#15201c]">{new Date(`${activePoint.date}T00:00:00`).toLocaleDateString('en-PK', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+        <p className="mt-0.5 font-bold text-[#315ee8]">{formatPKR(activePoint.revenue)} <span className="font-normal text-[#68736c]">· {activePoint.orders} orders</span></p>
+      </div>}
+    </div>
+    <p className="mt-1 text-center text-[11px] text-[#879087]">Hover or focus a point to see its date, revenue, and order count.</p>
   </div>
 }
 
@@ -1179,12 +1248,28 @@ function CityRow({ city, onSave }: { city: { slug: string; name: string; fee: nu
 function MediaSection({ onError }: { onError: (message: string) => void }) {
   const [files, setFiles] = useState<MediaFile[]>([])
   const [busy, setBusy] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [deleting, setDeleting] = useState('')
+  const [query, setQuery] = useState('')
+  const [typeFilter, setTypeFilter] = useState('All assets')
+  const [sort, setSort] = useState<'newest' | 'name'>('newest')
+  const [copied, setCopied] = useState('')
+  const typeOptions = ['All assets', 'JPG', 'PNG', 'WEBP', 'GIF']
+  const getType = (filename: string) => filename.split('.').pop()?.toUpperCase() ?? 'FILE'
+  const totalSize = files.reduce((sum, file) => sum + file.size, 0)
+  const filteredFiles = [...files]
+    .filter(file => (typeFilter === 'All assets' || getType(file.filename) === typeFilter) && file.filename.toLowerCase().includes(query.trim().toLowerCase()))
+    .sort((a, b) => sort === 'name' ? a.filename.localeCompare(b.filename) : Date.parse(b.uploadedAt) - Date.parse(a.uploadedAt))
 
   async function load() {
+    setLoading(true)
     try {
       setFiles(await adminFetch<MediaFile[]>('/api/admin/media'))
+      onError('')
     } catch (cause) {
       onError(cause instanceof Error ? cause.message : 'Could not load media.')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -1211,32 +1296,87 @@ function MediaSection({ onError }: { onError: (message: string) => void }) {
     }
   }
 
-  async function remove(filename: string) {
-    if (!window.confirm(`Delete ${filename}?`)) return
+  async function copyUrl(file: MediaFile) {
     try {
-      await adminFetch(`/api/admin/media/${filename}`, { method: 'DELETE' })
-      setFiles(files.filter(file => file.filename !== filename))
-    } catch (cause) {
-      onError(cause instanceof Error ? cause.message : 'File was not deleted.')
+      await navigator.clipboard.writeText(`${apiUrl}${file.url}`)
+      setCopied(file.filename)
+      window.setTimeout(() => setCopied(current => current === file.filename ? '' : current), 1800)
+      onError('')
+    } catch {
+      onError('Could not copy the image URL. Clipboard access may be blocked by your browser.')
     }
   }
 
-  return <section className="border border-[#dfe4dc] bg-white p-5 sm:p-6">
-    <div className="flex flex-wrap items-center justify-between gap-3">
-      <div><h2 className="font-display text-lg font-bold">Media library</h2><p className="mt-1 text-xs text-[#68736c]">Upload JPG, PNG, WebP, or GIF (max 5 MB). Copy a URL into hero, gallery, or product image fields.</p></div>
-      <label className="inline-flex h-11 cursor-pointer items-center gap-2 bg-[#142c24] px-4 text-sm font-semibold text-white hover:bg-[#315ee8]">
-        <ImagePlus size={17} /> {busy ? 'Uploading…' : 'Upload image'}
-        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={upload} className="hidden" />
-      </label>
-    </div>
-    {files.length ? <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">{files.map(file => <li key={file.filename} className="border border-[#edf0eb]">
-      <img src={`${apiUrl}${file.url}`} alt={file.filename} className="aspect-square w-full object-cover" loading="lazy" />
-      <div className="flex items-center justify-between gap-2 p-2">
-        <button onClick={() => void navigator.clipboard?.writeText(`${apiUrl}${file.url}`).catch(() => undefined)} className="truncate text-left text-[11px] font-semibold text-[#315ee8]" title="Copy full URL">Copy URL</button>
-        <button onClick={() => void remove(file.filename)} aria-label={`Delete ${file.filename}`} className="text-red-700"><Trash2 size={15} /></button>
+  async function remove(file: MediaFile) {
+    if (!window.confirm(`Delete ${file.filename}? Existing product or page links to this image will stop working.`)) return
+    setDeleting(file.filename)
+    try {
+      await adminFetch(`/api/admin/media/${file.filename}`, { method: 'DELETE' })
+      setFiles(current => current.filter(item => item.filename !== file.filename))
+      onError('')
+    } catch (cause) {
+      onError(cause instanceof Error ? cause.message : 'File was not deleted.')
+    } finally {
+      setDeleting('')
+    }
+  }
+
+  const formatSize = (bytes: number) => bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  const formatDate = (value: string) => {
+    const date = new Date(value)
+    return Number.isNaN(date.getTime()) ? 'Date unavailable' : date.toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' })
+  }
+
+  return <div className="space-y-5">
+    <section className="flex flex-wrap items-center justify-between gap-5 bg-[#142c24] p-5 text-white sm:p-7">
+      <div className="flex min-w-0 items-start gap-4">
+        <span className="grid size-12 shrink-0 place-items-center bg-white/10"><Images size={23}/></span>
+        <div><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#b8c9bd]">Store assets</p><h2 className="mt-1 font-display text-2xl font-bold">Media library</h2><p className="mt-1 max-w-xl text-sm leading-6 text-white/70">Keep product and storefront photography organized in one place. Copy an asset URL to use it anywhere in the store.</p></div>
       </div>
-    </li>)}</ul> : <p className="mt-3 text-sm text-[#68736c]">No uploads yet.</p>}
-  </section>
+      <label className={`inline-flex h-11 shrink-0 cursor-pointer items-center gap-2 bg-white px-4 text-sm font-bold text-[#142c24] transition hover:bg-[#e5eaff] ${busy ? 'pointer-events-none opacity-60' : ''}`}>
+        <ImagePlus size={17}/>{busy ? 'Uploading…' : 'Upload image'}
+        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={upload} disabled={busy} className="hidden" />
+      </label>
+    </section>
+
+    <div className="grid gap-3 sm:grid-cols-3">
+      <div className="flex items-center gap-3 border border-[#dfe4dc] bg-white p-4"><span className="grid size-10 place-items-center bg-[#e5eaff] text-[#315ee8]"><Images size={18}/></span><div><p className="text-[11px] font-semibold uppercase tracking-wide text-[#68736c]">Images</p><p className="font-display text-xl font-bold">{files.length}</p></div></div>
+      <div className="flex items-center gap-3 border border-[#dfe4dc] bg-white p-4"><span className="grid size-10 place-items-center bg-[#e9f3eb] text-[#347346]"><HardDrive size={18}/></span><div><p className="text-[11px] font-semibold uppercase tracking-wide text-[#68736c]">Storage used</p><p className="font-display text-xl font-bold">{formatSize(totalSize)}</p></div></div>
+      <div className="flex items-center gap-3 border border-[#dfe4dc] bg-white p-4"><span className="grid size-10 place-items-center bg-[#fff4df] text-[#a66a12]"><FileImage size={18}/></span><div><p className="text-[11px] font-semibold uppercase tracking-wide text-[#68736c]">Image formats</p><p className="font-display text-xl font-bold">{new Set(files.map(file => getType(file.filename))).size}</p></div></div>
+    </div>
+
+    <div className="grid items-start gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
+      <aside className="border border-[#dfe4dc] bg-white p-4">
+        <h3 className="mb-3 px-2 text-[11px] font-bold uppercase tracking-[0.14em] text-[#7b857d]">Categories</h3>
+        <nav aria-label="Filter media by image format" className="flex gap-2 overflow-x-auto pb-1 lg:block lg:space-y-1 lg:overflow-visible">
+          {typeOptions.map(type => {
+            const count = type === 'All assets' ? files.length : files.filter(file => getType(file.filename) === type).length
+            return <button key={type} type="button" aria-pressed={typeFilter === type} onClick={() => setTypeFilter(type)} className={`flex shrink-0 items-center justify-between gap-5 px-3 py-2.5 text-left text-sm font-semibold transition lg:w-full ${typeFilter === type ? 'bg-[#e5eaff] text-[#315ee8]' : 'text-[#536057] hover:bg-[#f5f6f2]'}`}><span>{type}</span><span className="text-xs opacity-70">{count}</span></button>
+          })}
+        </nav>
+        <div className="mt-5 border-t border-[#edf0eb] pt-4"><p className="text-xs font-semibold text-[#15201c]">Supported formats</p><p className="mt-1 text-xs leading-5 text-[#68736c]">JPG, PNG, WebP, and GIF · up to 5 MB per image.</p></div>
+      </aside>
+
+      <section className="min-w-0">
+        <div className="mb-4 flex flex-wrap items-center gap-3 border border-[#dfe4dc] bg-white p-3">
+          <div className="flex min-w-[180px] flex-1 items-center gap-2 border border-[#edf0eb] px-3"><Search size={16} className="shrink-0 text-[#7a857d]"/><input aria-label="Search media filenames" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search image filenames" className="h-10 min-w-0 flex-1 text-sm outline-none"/></div>
+          <label className="flex items-center gap-2 text-xs font-semibold text-[#68736c]">Sort
+            <select value={sort} onChange={event => setSort(event.target.value as 'newest' | 'name')} className="h-10 border border-[#cfd6ce] bg-white px-2 text-sm text-[#15201c] outline-none focus:border-[#315ee8]"><option value="newest">Newest first</option><option value="name">Filename</option></select>
+          </label>
+        </div>
+
+        <div className="mb-3 flex items-center justify-between gap-3"><h3 className="font-display text-lg font-bold">{typeFilter === 'All assets' ? 'All images' : `${typeFilter} images`} <span className="ml-1 font-sans text-sm font-normal text-[#7b857d]">{filteredFiles.length}</span></h3>{!loading && <button type="button" onClick={() => void load()} className="text-xs font-semibold text-[#315ee8] hover:underline">Refresh</button>}</div>
+        {loading ? <p className="grid min-h-48 place-items-center border border-dashed border-[#cfd6ce] bg-white text-sm text-[#68736c]">Loading your media library…</p>
+          : filteredFiles.length ? <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">{filteredFiles.map(file => <li key={file.filename} className="group overflow-hidden border border-[#dfe4dc] bg-white transition hover:-translate-y-0.5 hover:border-[#b9c6f6] hover:shadow-md">
+            <div className="relative aspect-[4/3] overflow-hidden bg-[#f5f6f2] p-2"><img src={`${apiUrl}${file.url}`} alt={file.filename} className="size-full object-contain" loading="lazy"/><span className="absolute left-2 top-2 bg-white/95 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-[#536057] shadow-sm">{getType(file.filename)}</span></div>
+            <div className="p-3"><p className="truncate text-xs font-bold text-[#15201c]" title={file.filename}>{file.filename}</p><p className="mt-1 flex items-center justify-between gap-2 text-[10px] text-[#7b857d]"><span>{formatSize(file.size)}</span><span>{formatDate(file.uploadedAt)}</span></p>
+              <div className="mt-3 grid grid-cols-[1fr_auto] gap-2 border-t border-[#edf0eb] pt-2.5"><button type="button" onClick={() => void copyUrl(file)} className="inline-flex min-w-0 items-center justify-center gap-1.5 bg-[#f5f6f2] px-2 py-2 text-[11px] font-semibold text-[#315ee8] hover:bg-[#e5eaff]">{copied === file.filename ? <ShieldCheck size={13}/> : <Copy size={13}/>}<span>{copied === file.filename ? 'Copied' : 'Copy URL'}</span></button><button type="button" onClick={() => void remove(file)} disabled={deleting === file.filename} aria-label={`Delete ${file.filename}`} title="Delete image" className="grid size-8 place-items-center border border-[#edf0eb] text-red-700 hover:bg-red-50 disabled:opacity-50"><Trash2 size={14}/></button></div>
+            </div>
+          </li>)}</ul>
+          : <div className="grid min-h-56 place-items-center border border-dashed border-[#cfd6ce] bg-white p-6 text-center"><div><span className="mx-auto grid size-12 place-items-center bg-[#f5f6f2] text-[#7b857d]"><Images size={21}/></span><p className="mt-3 font-semibold text-[#15201c]">{files.length ? 'No matching images' : 'Your library is empty'}</p><p className="mt-1 max-w-sm text-sm leading-6 text-[#68736c]">{files.length ? 'Try another filename or choose a different image format.' : 'Upload your first image to start building a reusable storefront library.'}</p></div></div>}
+      </section>
+    </div>
+  </div>
 }
 
 const inputClass = 'mt-2 h-11 w-full border border-[#cfd6ce] px-3 text-sm font-normal outline-none focus:border-[#315ee8]'
