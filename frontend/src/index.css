@@ -9,7 +9,7 @@
 :root {
   font-family: var(--font-sans);
   color: #15201c;
-  background: #f5f6f2;
+  background: #ffffff;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -56,37 +56,61 @@ a:focus-visible {
 
 .header-action {
   position: relative;
-  display: grid;
-  width: 40px;
+  display: flex;
+  min-width: 40px;
   height: 40px;
-  place-items: center;
-  color: #26342c;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 7px;
+  color: #304057;
   transition: color 160ms ease, background-color 160ms ease;
 }
 
-.header-action-secondary,
-.category-link-wide {
-  display: none;
+.header-action-dark {
+  width: 38px;
+  min-width: 38px;
+  color: #ffffff;
 }
 
-.header-action:hover {
-  background: #e9ede6;
-  color: #315ee8;
+.header-action-dark:hover {
+  background: rgb(255 255 255 / 0.1);
+  color: #f4c62b;
 }
 
-.action-count {
+.header-count {
   position: absolute;
-  top: 1px;
+  top: 0;
   right: 0;
   display: grid;
   min-width: 16px;
   height: 16px;
   place-items: center;
   padding: 0 3px;
-  background: #c7f464;
-  color: #142c24;
+  border-radius: 999px;
+  background: #c91d45;
+  color: #fff;
   font-size: 9px;
   font-weight: 700;
+}
+
+.store-nav-link {
+  display: flex;
+  min-height: 39px;
+  align-items: center;
+  gap: 5px;
+  padding: 0 9px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.store-nav-link:hover,
+.store-nav-link:focus-visible {
+  background: rgb(255 255 255 / 0.11);
+  color: #f4d052;
 }
 
 .category-link {
@@ -119,6 +143,14 @@ a:focus-visible {
 
 .hero-visual img {
   animation: image-arrive 850ms cubic-bezier(0.2, 0.75, 0.3, 1) both;
+}
+
+.delivery-ticker-track {
+  animation: ticker-slide 34s linear infinite;
+}
+
+.delivery-ticker:hover .delivery-ticker-track {
+  animation-play-state: paused;
 }
 
 .section-kicker {
@@ -239,8 +271,13 @@ a:focus-visible {
   to { opacity: 1; transform: scale(1); }
 }
 
+@keyframes ticker-slide {
+  from { transform: translateX(0); }
+  to { transform: translateX(-25%); }
+}
+
 @media (min-width: 640px) {
-  .header-action-secondary { display: grid; }
+  .header-action-secondary { display: flex; }
   .section-heading { font-size: 32px; }
   .department-tile { min-height: 160px; padding: 20px; }
   .benefit-item { padding: 10px 18px; }
@@ -253,6 +290,8 @@ a:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .delivery-ticker-track { animation: none; }
+
   *, *::before, *::after {
     scroll-behavior: auto !important;
     animation-duration: 0.01ms !important;

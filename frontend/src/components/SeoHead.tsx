@@ -11,6 +11,7 @@ interface SeoHeadProps {
   canonical?: string
   noIndex?: boolean
   settings?: Record<string, string>
+  productData?: { name: string; description: string; image: string; slug: string; brand: string; price: number; inStock: boolean }
 }
 
 function upsertMeta(attribute: 'name' | 'property', key: string, content: string) {
@@ -27,6 +28,15 @@ function upsertMeta(attribute: 'name' | 'property', key: string, content: string
   if (!existing) document.head.appendChild(tag)
 }
 
+function absoluteImageUrl(image: string) {
+  if (!image || image.startsWith('data:')) return undefined
+  try {
+    return new URL(image, window.location.origin).href
+  } catch {
+    return undefined
+  }
+}
+
 function upsertCanonical(url: string) {
   const trimmed = url.trim()
   const existing = document.head.querySelector('link[rel="canonical"]')
@@ -41,7 +51,7 @@ function upsertCanonical(url: string) {
 }
 
 /** Keeps document title + meta/OG tags in sync with the current page (driven by the CMS SEO fields). */
-function SeoHead({ title, description, keywords = '', ogTitle = '', ogDescription = '', ogImage = '', ogType = 'website', canonical = '', noIndex = false, settings = {} }: SeoHeadProps) {
+function SeoHead({ title, description, keywords = '', ogTitle = '', ogDescription = '', ogImage = '', ogType = 'website', canonical = '', noIndex = false, settings = {}, productData }: SeoHeadProps) {
   useEffect(() => {
     document.title = title.trim() || 'TechnoBaazar'
     upsertMeta('name', 'description', description)
@@ -49,12 +59,18 @@ function SeoHead({ title, description, keywords = '', ogTitle = '', ogDescriptio
     upsertMeta('name', 'robots', noIndex ? 'noindex, nofollow' : '')
     upsertMeta('property', 'og:title', ogTitle || title)
     upsertMeta('property', 'og:description', ogDescription || description)
-    upsertMeta('property', 'og:image', ogImage)
+    const socialImage = absoluteImageUrl(ogImage) ?? ogImage
+    upsertMeta('property', 'og:image', socialImage)
     upsertMeta('property', 'og:type', ogType)
+    upsertMeta('property', 'og:locale', 'en_PK')
+    upsertMeta('property', 'og:url', canonical || window.location.href)
+    upsertMeta('property', 'og:site_name', settings.seo_business_name || 'TechnoBaazar')
+    upsertMeta('property', 'product:price:amount', productData ? String(productData.price) : '')
+    upsertMeta('property', 'product:price:currency', productData ? 'PKR' : '')
     upsertMeta('name', 'twitter:card', ogImage ? 'summary_large_image' : '')
     upsertMeta('name', 'twitter:title', ogTitle || title)
     upsertMeta('name', 'twitter:description', ogDescription || description)
-    upsertMeta('name', 'twitter:image', ogImage)
+    upsertMeta('name', 'twitter:image', socialImage)
     upsertMeta('name', 'twitter:site', settings.seo_twitter_handle ?? '')
     upsertCanonical(canonical)
     upsertMeta('name', 'google-site-verification', settings.seo_google_verification ?? '')
@@ -96,6 +112,17 @@ function SeoHead({ title, description, keywords = '', ogTitle = '', ogDescriptio
             streetAddress: settings.seo_business_street || undefined, addressLocality: settings.seo_business_city || undefined,
             addressRegion: settings.seo_business_region || undefined, postalCode: settings.seo_business_postal_code || undefined,
             addressCountry: settings.seo_business_country || 'PK' } : undefined },
+        ...(productData ? [{
+          '@context': 'https://schema.org', '@type': 'Product', name: productData.name,
+          description: productData.description, sku: productData.slug,
+          image: absoluteImageUrl(productData.image),
+          brand: { '@type': 'Brand', name: productData.brand },
+          offers: {
+            '@type': 'Offer', url: canonical || window.location.href, priceCurrency: 'PKR',
+            price: String(productData.price), availability: `https://schema.org/${productData.inStock ? 'InStock' : 'OutOfStock'}`,
+            itemCondition: 'https://schema.org/NewCondition',
+          },
+        }] : []),
       ]
       const jsonLd = document.createElement('script')
       jsonLd.type = 'application/ld+json'; jsonLd.id = 'tb-business-jsonld'
@@ -103,7 +130,7 @@ function SeoHead({ title, description, keywords = '', ogTitle = '', ogDescriptio
       document.head.appendChild(jsonLd); trackedNodes.push(jsonLd)
     }
     return () => trackedNodes.forEach(node => node.remove())
-  }, [title, description, keywords, ogTitle, ogDescription, ogImage, ogType, canonical, noIndex, settings])
+  }, [title, description, keywords, ogTitle, ogDescription, ogImage, ogType, canonical, noIndex, settings, productData])
 
   return null
 }

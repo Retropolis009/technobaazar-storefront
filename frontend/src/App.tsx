@@ -95,6 +95,7 @@ function App() {
   const cartTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const cartCount = Object.values(cart).reduce((total, quantity) => total + quantity, 0)
   const isAdminRoute = location.pathname.startsWith('/admin')
+  const isCheckoutRoute = location.pathname === '/checkout'
 
   const visibleProducts = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase()
@@ -293,8 +294,10 @@ function App() {
     if (productMatch) {
       const product = catalog.find(item => item.slug === decodeURIComponent(productMatch[1]))
       if (product) {
-        const title = fallback(product.seo?.title, `${product.name} Price in Pakistan | TechnoBaazar`)
-        const description = fallback(product.seo?.description, `${product.name} \u2014 ${product.detail || product.category}. ${siteDescription}`)
+        const title = fallback(product.seo?.title, `Buy ${product.name} in Pakistan | Price & Specs | TechnoBaazar`)
+        const productSummary = (product.detail || product.description || product.category).replace(/\s+/g, ' ').trim()
+        const defaultDescription = `Shop ${product.name} in Pakistan. ${productSummary} Compare specifications and price at TechnoBaazar, with nationwide delivery.`
+        const description = fallback(product.seo?.description, defaultDescription).slice(0, 160)
         return {
           title, description,
           keywords: fallback(product.seo?.keywords, content.seo_site_keywords),
@@ -302,6 +305,11 @@ function App() {
           ogDescription: fallback(product.seo?.ogDescription, description),
           ogImage: fallback(product.seo?.ogImage, product.image || content.seo_og_image),
           ogType: 'product', canonical: fallback(product.seo?.canonicalUrl, canonicalFor(path)), noIndex: false,
+          productData: {
+            name: product.name, description, image: product.image || content.seo_og_image,
+            slug: product.slug, brand: product.brand, price: product.priceValue,
+            inStock: !(product.trackStock ?? true) || (product.stockQuantity ?? 0) > 0,
+          },
         }
       }
     }
@@ -312,8 +320,8 @@ function App() {
       const category = categoryFromSlug(decodeURIComponent(collectionMatch[1]), names)
       if (category) {
         const isAll = category === 'All gear'
-        const title = isAll ? siteTitle : `${category} Price in Pakistan | TechnoBaazar`
-        const description = isAll ? siteDescription : `Shop ${category} online in Pakistan at the best prices. ${siteDescription}`
+        const title = isAll ? siteTitle : `Shop ${category} in Pakistan | TechnoBaazar`
+        const description = isAll ? siteDescription : `Browse ${category} online at TechnoBaazar. Compare specifications, availability, and prices, with delivery across Pakistan.`
         return {
           title, description, keywords: content.seo_site_keywords, ogTitle: title,
           ogDescription: description, ogImage: content.seo_og_image, ogType: 'website',
@@ -327,6 +335,15 @@ function App() {
         title: siteTitle, description: siteDescription, keywords: content.seo_site_keywords,
         ogTitle: siteTitle, ogDescription: siteDescription, ogImage: content.seo_og_image,
         ogType: 'website', canonical: canonicalFor('/'), noIndex: false,
+      }
+    }
+
+    if (path === '/checkout') {
+      return {
+        title: 'Secure Checkout | TechnoBaazar',
+        description: 'Complete your TechnoBaazar order with delivery details and payment selection.',
+        keywords: '', ogTitle: 'Secure Checkout | TechnoBaazar', ogDescription: '', ogImage: '',
+        ogType: 'website', canonical: '', noIndex: true,
       }
     }
 
@@ -356,9 +373,9 @@ function App() {
   const pageActions = { products: catalog, favorites, content, categories: storeCategories, onAddToCart: addToCart, onToggleFavorite: toggleFavorite }
 
   return (
-    <div className="min-h-screen bg-[#f5f6f2] text-[#15201c]">
+    <div className="min-h-screen bg-white text-[#18212c]">
       <SeoHead {...pageSeo} settings={content as unknown as Record<string, string>} />
-      {!isAdminRoute && <SiteHeader
+      {!isAdminRoute && !isCheckoutRoute && <SiteHeader
         departments={activeDepartments}
         search={search}
         onSearchChange={setSearch}
@@ -405,6 +422,25 @@ function App() {
           path="/cart"
           element={
             <CartPage
+              mode="cart"
+              products={catalog.filter((product) => cart[product.slug])}
+              quantities={cart}
+              onUpdateQuantity={updateQuantity}
+              onRemove={removeFromCart}
+              customer={customer}
+              settings={settings}
+              checkoutNote={content.checkout_note}
+              paymentNote={content.payment_note}
+              confirmationNote={content.order_confirmation_note}
+              onOrderPlaced={handleOrderPlaced}
+            />
+          }
+        />
+        <Route
+          path="/checkout"
+          element={
+            <CartPage
+              mode="checkout"
               products={catalog.filter((product) => cart[product.slug])}
               quantities={cart}
               onUpdateQuantity={updateQuantity}
@@ -421,7 +457,7 @@ function App() {
         <Route path="/account" element={<AccountPage customer={customer} onAuthenticated={handleAuthenticated} onLogout={handleLogout} />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
-      {!isAdminRoute && <SiteFooter content={content} />}
+      {!isAdminRoute && !isCheckoutRoute && <SiteFooter content={content} />}
       {!isAdminRoute && <ToastNotice message={notice} onDismiss={() => setNotice('')} />}
     </div>
   )
