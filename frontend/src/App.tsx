@@ -342,7 +342,7 @@ function App() {
       return {
         title, description, keywords: content.seo_site_keywords, ogTitle: title,
         ogDescription: description, ogImage: content.seo_og_image, ogType: 'website',
-        canonical: canonicalFor(path), noIndex: false,
+        canonical: canonicalFor(path), noIndex: ['/favorites', '/cart', '/account'].includes(path),
       }
     }
 

@@ -15,7 +15,7 @@ technobaazar-storefront/
 
 - Node.js 20.19+ or 22.12+ (frontend)
 - Python 3.11+ (backend)
-- Docker Compose v2 (for the recommended local PostgreSQL setup)
+- Docker Compose v2 (recommended for local PostgreSQL; an optional embedded helper is also available)
 
 ## Run locally
 
@@ -84,11 +84,19 @@ flask --app app run --debug
 ```
 
 The seeded catalog is intentionally one-time per database; `seed-catalog`
-refuses to overwrite an already initialized catalog. To reset this disposable
-local database and start over, run `docker compose down -v` and then repeat the
-commands. Keep `DATABASE_URL` set in the backend environment to run the store
-against Postgres. SQLite remains supported if you explicitly set
-`DATABASE_URL=sqlite:///store.db`.
+refuses to overwrite an already initialized catalog. To add optional extra
+listings after seeding, run `python seed_more_products.py` from `backend/`;
+`verify-catalog` checks that all 57 starter products remain present while
+allowing those additions. To reset this disposable local database and start
+over, run `docker compose down -v` and then repeat the commands. Keep
+`DATABASE_URL` set in the backend environment to run the store against Postgres.
+SQLite remains supported if you explicitly set `DATABASE_URL=sqlite:///store.db`.
+
+If Docker is unavailable, `backend/local_postgres.py` can start a disposable
+local PostgreSQL instance using the optional `pgserver` package (`pip install
+pgserver==0.1.4`). Run it from `backend/`; it prints a connection URL to use as
+`DATABASE_URL`. The Compose setup above remains the recommended persistent
+option.
 
 ## Database migrations
 

@@ -55,6 +55,7 @@ function SeoHead({ title, description, keywords = '', ogTitle = '', ogDescriptio
     upsertMeta('name', 'twitter:title', ogTitle || title)
     upsertMeta('name', 'twitter:description', ogDescription || description)
     upsertMeta('name', 'twitter:image', ogImage)
+    upsertMeta('name', 'twitter:site', settings.seo_twitter_handle ?? '')
     upsertCanonical(canonical)
     upsertMeta('name', 'google-site-verification', settings.seo_google_verification ?? '')
     upsertMeta('name', 'msvalidate.01', settings.seo_bing_verification ?? '')

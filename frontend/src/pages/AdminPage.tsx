@@ -853,6 +853,7 @@ const SEO_FIELDS: Array<{ key: string; label: string; group: string; multiline?:
   { key: 'seo_google_analytics_id', label: 'Google Analytics measurement ID', group: 'Verification & analytics', hint: 'Format: G-XXXXXXXXXX' },
   { key: 'seo_google_tag_manager_id', label: 'Google Tag Manager container ID', group: 'Verification & analytics', hint: 'Format: GTM-XXXXXXX' },
   { key: 'seo_meta_pixel_id', label: 'Meta Pixel ID', group: 'Verification & analytics' },
+  { key: 'seo_twitter_handle', label: 'X / Twitter handle', group: 'Social profiles', hint: 'Optional, for example @technobaazar.' },
   { key: 'seo_business_name', label: 'Business name', group: 'Business structured data' },
   { key: 'seo_business_legal_name', label: 'Legal name', group: 'Business structured data' },
   { key: 'seo_business_phone', label: 'Phone', group: 'Business structured data' },

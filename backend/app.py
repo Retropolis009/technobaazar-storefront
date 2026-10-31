@@ -12,11 +12,14 @@ from uuid import uuid4
 from urllib.parse import urlparse
 from werkzeug.middleware.proxy_fix import ProxyFix
 
+from dotenv import load_dotenv
 from flask import Flask, jsonify, request, session, send_from_directory
 from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import check_password_hash, generate_password_hash
+
+load_dotenv(Path(__file__).with_name('.env'))
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -95,7 +98,7 @@ SITE_CONTENT_DEFAULTS = {
     'seo_google_analytics_id': '',
     'seo_google_tag_manager_id': '',
     'seo_meta_pixel_id': '',
-    'seo_robots_txt': 'User-agent: *\nAllow: /',
+    'seo_robots_txt': 'User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /cart\nDisallow: /account\nDisallow: /favorites',
     'seo_business_name': 'TechnoBaazar',
     'seo_business_legal_name': '',
     'seo_business_phone': '',
@@ -111,6 +114,7 @@ SITE_CONTENT_DEFAULTS = {
     'seo_social_tiktok': '',
     'seo_social_youtube': '',
     'seo_social_x': '',
+    'seo_twitter_handle': '',
     'seo_about_title': 'About | TechnoBaazar',
     'seo_about_description': '',
     'seo_cart_title': 'Shopping Cart | TechnoBaazar',
@@ -136,7 +140,7 @@ SITE_CONTENT_LIMITS.update({'hero_subtitle': 500, 'featured_subtitle': 500, 'ben
                              'seo_canonical_base': 500, 'seo_robots_txt': 8000,
                              'seo_google_verification': 200, 'seo_bing_verification': 200,
                              'seo_google_analytics_id': 100, 'seo_google_tag_manager_id': 100,
-                             'seo_meta_pixel_id': 100, 'seo_business_name': 200,
+                             'seo_meta_pixel_id': 100, 'seo_twitter_handle': 60, 'seo_business_name': 200,
                              'seo_business_legal_name': 200, 'seo_business_phone': 40,
                              'seo_business_email': 254, 'seo_business_street': 300,
                              'seo_business_city': 120, 'seo_business_region': 120,
@@ -914,6 +918,15 @@ def create_app():
         return key
 
     # -- public storefront API ------------------------------------------------------
+    @app.get('/api')
+    def api_root():
+        return jsonify({
+            'status': 'ok',
+            'health': '/api/health',
+            'catalog': '/api/catalog',
+            'products': '/api/products',
+        })
+
     @app.get('/api/health')
     def health():
         return jsonify({'status': 'ok'})
@@ -2156,12 +2169,16 @@ def create_app():
     def verify_catalog():
         """Check that the complete starter catalog is present in the configured database."""
         seed_file = Path(__file__).with_name('seed_products.json')
-        expected = len(json.loads(seed_file.read_text(encoding='utf-8')))
+        starter_rows = json.loads(seed_file.read_text(encoding='utf-8'))
+        expected_slugs = {row['slug'] for row in starter_rows}
+        present_slugs = {slug for (slug,) in db.session.query(Product.slug).all()}
+        missing_slugs = expected_slugs - present_slugs
         state = db.session.get(CatalogState, 1)
         actual = Product.query.count()
-        if not state or not state.initialized or actual != expected:
-            raise SystemExit(f'Catalog verification failed: initialized={bool(state and state.initialized)}, found {actual} products, expected {expected}.')
-        print(f'Catalog verified: {actual}/{expected} products in {db.engine.url.get_backend_name()} database.')
+        if not state or not state.initialized or missing_slugs:
+            missing = ', '.join(sorted(missing_slugs)[:5])
+            raise SystemExit(f'Catalog verification failed: initialized={bool(state and state.initialized)}, {len(expected_slugs) - len(missing_slugs)}/{len(expected_slugs)} starter products present, {actual} products total. Missing: {missing or "catalog initialization"}.')
+        print(f'Catalog verified: {len(expected_slugs)}/{len(expected_slugs)} starter products present ({actual} total) in {db.engine.url.get_backend_name()} database.')
 
     @app.cli.command('seed-catalog')
     def seed_catalog():
