@@ -41,10 +41,10 @@ npm run dev                # store at http://localhost:5173 (proxies /api)
 
 ## Environment and deployment
 
-`backend/.env.example` documents the supported environment variables. Set a unique `SESSION_SECRET` (the legacy `FLASK_SECRET_KEY` is also accepted for existing deployments), a PostgreSQL `DATABASE_URL`, `APP_ENV=production`, exact `FRONTEND_ORIGIN`, and `AUTO_CREATE_TABLES=false` for production. Set `TRUSTED_PROXY_HOPS` when requests pass through a TLS-terminating proxy. The API uses secure HttpOnly session cookies in production and enforces the configured request origin for state-changing routes. Admin sign-in uses the Node API; migrated Werkzeug password hashes remain supported.
+`backend/.env.example` is configured for a single cPanel deployment with local PostgreSQL. Set `DB_NAME`, `DB_USER`, and `DB_PASSWORD` to the credentials created in cPanel; the backend defaults to `localhost:5432`. Alternatively, `DATABASE_URL` can be used for providers that give you a connection URL. Set a unique `SESSION_SECRET`, `APP_ENV=production`, the exact public `FRONTEND_ORIGIN`, and `AUTO_CREATE_TABLES=false`. Set `TRUSTED_PROXY_HOPS` to match the TLS proxy setup. The API uses secure HttpOnly session cookies in production and enforces the configured request origin for state-changing routes. Admin sign-in uses the Node API; migrated Werkzeug password hashes remain supported.
 
 - **One service:** run `npm run build` in `frontend/`, then start the API from `backend/`; if `frontend/dist/` exists, Express serves the storefront with an SPA fallback.
-- **Split hosting:** deploy `frontend/dist/` as static assets and the Node API separately. Set `VITE_API_URL` at frontend build time and include the frontend origin in `FRONTEND_ORIGIN`.
+- **Split hosting:** deploy `frontend/dist/` as static assets and the Node API separately. Set `VITE_API_URL` at frontend build time and include the frontend origin in `FRONTEND_ORIGIN`. For the single-service deployment, no frontend environment variable is needed; Express serves the built frontend and API from the same origin.
 - PostgreSQL is the recommended production database. SQLite remains available for local use and automated tests.
 
 ## Database migrations and data

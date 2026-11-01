@@ -1,4 +1,4 @@
-import { ArrowUpRight, CreditCard, PackageCheck, Truck, Zap } from 'lucide-react'
+import { CreditCard, PackageCheck, Truck, Zap } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { DEFAULT_LANDING_CONTENT, type LandingContent } from '../content'
 
@@ -29,7 +29,6 @@ function SiteFooter({ content = DEFAULT_LANDING_CONTENT }: { content?: LandingCo
           <ul className="mt-4 space-y-2.5 text-xs text-white/65">
             <li><Link to="/about" className="hover:text-[#f4c62b]">About TechnoBaazar</Link></li>
             <li><Link to="/account" className="hover:text-[#f4c62b]">My account</Link></li>
-            <li><Link to="/admin" className="hover:text-[#f4c62b]">{content.footer_admin_text}</Link></li>
           </ul>
         </div>
 
@@ -46,7 +45,6 @@ function SiteFooter({ content = DEFAULT_LANDING_CONTENT }: { content?: LandingCo
       <div className="border-t border-white/15">
         <div className="mx-auto flex max-w-[1320px] flex-col gap-3 px-5 py-4 text-[10px] text-white/50 sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-10">
           <p>© 2026 TechnoBaazar. All rights reserved.</p>
-          <div className="flex items-center gap-5"><Link to="/admin" className="hover:text-white">{content.footer_admin_text}</Link><Link to="/" className="inline-flex items-center gap-1.5 text-white/70 hover:text-[#f4c62b]">{content.footer_home_text}<ArrowUpRight size={12}/></Link></div>
         </div>
       </div>
     </footer>

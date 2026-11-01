@@ -53,7 +53,12 @@ app.use(cors({
   },
 }))
 app.use((req, res, next) => {
-  if (production && (req.path.startsWith('/api/admin') || req.path.startsWith('/admin')) && !req.secure) return res.status(426).json({ error: 'Admin access requires HTTPS. Configure trusted proxy headers if TLS terminates upstream.' })
+  if (production && req.path.startsWith('/admin') && !req.secure) {
+    const httpsOrigin = allowedOrigins.find(origin => origin.startsWith('https://'))
+    if (httpsOrigin && ['GET', 'HEAD'].includes(req.method)) return res.redirect(308, new URL(req.originalUrl, httpsOrigin).toString())
+    return res.status(426).send('Admin access requires HTTPS. Configure FRONTEND_ORIGIN and trusted proxy headers for TLS termination.')
+  }
+  if (production && req.path.startsWith('/api/admin') && !req.secure) return res.status(426).json({ error: 'Admin access requires HTTPS. Configure trusted proxy headers if TLS terminates upstream.' })
   if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method) && !originAllowed(req.get('Origin'))) return res.status(403).json({ error: 'Request origin is not allowed.' })
   next()
 })

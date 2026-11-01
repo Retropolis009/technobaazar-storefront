@@ -184,7 +184,7 @@ function AdminPage({ products, onProductsChange }: Props) {
   if (!authenticated) return <main className="grid min-h-[70vh] place-items-center px-4 py-16"><form onSubmit={login} className="w-full max-w-md border border-[#dfe4dc] bg-white p-8 shadow-sm">
     <div className="mb-5 grid h-12 w-12 place-items-center bg-[#e5eaff] text-[#315ee8]"><ShieldCheck /></div><p className="section-kicker">Restricted area</p><h1 className="font-display text-3xl font-bold">Admin sign in</h1><p className="mt-2 text-sm text-[#68736c]">Store staff only. Sign in to manage the catalog, orders, and landing content.</p>
     <label className="mt-6 block text-sm font-semibold" htmlFor="admin-email">Admin email</label><input id="admin-email" type="email" autoComplete="off" value={email} onChange={event => setEmail(event.target.value)} className="mt-2 h-11 w-full border border-[#cfd6ce] px-3 outline-none focus:border-[#315ee8]" /><label className="mt-4 block text-sm font-semibold" htmlFor="admin-password">Admin password</label><input id="admin-password" type="password" autoComplete="off" value={password} onChange={event => setPassword(event.target.value)} className="mt-2 h-11 w-full border border-[#cfd6ce] px-3 outline-none focus:border-[#315ee8]" />
-    {error && <p role="alert" className="mt-3 text-sm text-red-700">{error}</p>}<button disabled={sessionResetting} className="mt-5 h-11 w-full bg-[#142c24] font-semibold text-white hover:bg-[#315ee8] disabled:opacity-60">{sessionResetting ? 'Securing sign-in…' : 'Sign in'}</button><button type="button" onClick={() => navigate('/')} className="mt-4 w-full text-sm text-[#68736c]">Back to store</button>
+    {error && <p role="alert" className="mt-3 text-sm text-red-700">{error}</p>}<button disabled={sessionResetting} className="mt-5 h-11 w-full bg-[#142c24] font-semibold text-white hover:bg-[#315ee8] disabled:opacity-60">{sessionResetting ? 'Securing sign-in…' : 'Sign in'}</button>
   </form></main>
 
   const sectionMeta: Record<Section, { title: string; note: string }> = {
@@ -210,7 +210,6 @@ function AdminPage({ products, onProductsChange }: Props) {
         <NavButton active={section === 'seo'} onClick={() => setSection('seo')} icon={<Search size={17}/>} label="SEO" />
         <NavButton active={section === 'settings'} onClick={() => setSection('settings')} icon={<SettingsIcon size={17}/>} label="Settings" />
       </nav>
-      <button onClick={() => navigate('/')} className="mt-3 hidden px-3 py-3 text-left text-sm text-[#68736c] hover:text-[#315ee8] md:block">← Back to storefront</button>
       <button onClick={async () => { try { await fetch(`${apiUrl}/api/admin/logout`, { method: 'POST', credentials: 'include' }) } finally { setAuthenticated(false); setEmail(''); setPassword(''); navigate('/admin') } }} className="mt-3 flex items-center gap-3 px-3 py-3 text-sm text-[#68736c] hover:text-red-700"><LogOut size={17}/>Sign out</button>
     </aside>
     <div className="min-w-0 flex-1 p-5 sm:p-8">
@@ -694,8 +693,6 @@ const CONTENT_GROUPS: Array<{ title: string; note: string; preview?: 'search-sni
       { key: 'header_mobile_search_placeholder', label: 'Mobile search hint', hint: 'Grey hint inside the mobile search box.' },
       { key: 'header_about_text', label: '“About” link text', hint: 'Rename the About link in the menu if you need to.' },
       { key: 'footer_brand_text', label: 'Footer brand line', hint: 'Bold brand line at the top of the footer.' },
-      { key: 'footer_home_text', label: 'Footer “Home” label', hint: 'Rename the Home link in the footer.' },
-      { key: 'footer_admin_text', label: 'Footer “Admin” label', hint: 'Rename the staff sign-in link in the footer.' },
       { key: 'footer_tagline', label: 'Footer tagline', hint: 'One line under the footer brand.' },
     ],
   },
@@ -914,7 +911,6 @@ function LandingPreview({ values, benefits }: { values: Record<string, string>; 
     <div className="bg-[#142c24] px-3 py-3 text-white">
       <p className="text-[11px] font-bold">{text('footer_brand_text')}</p>
       <p className="text-[9px] text-white/75">{text('footer_tagline')}</p>
-      <p className="mt-1 text-[9px] text-white/75">{text('footer_home_text')} \u00b7 {text('footer_admin_text')}</p>
     </div>
   </div>
 }

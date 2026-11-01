@@ -5,23 +5,33 @@ import { Sequelize, DataTypes } from 'sequelize'
 
 dotenv.config({ path: path.join(path.dirname(fileURLToPath(import.meta.url)), '.env') })
 const root = path.dirname(fileURLToPath(import.meta.url))
-const rawUrl = process.env.DATABASE_URL || 'sqlite:///store.db'
+const rawUrl = process.env.DATABASE_URL
 let sequelize
-if (rawUrl.startsWith('sqlite:')) {
-  const sqlitePath = rawUrl.slice('sqlite:'.length)
+if (rawUrl?.startsWith('sqlite:') || (!rawUrl && !process.env.DB_NAME && !process.env.DB_USER)) {
+  const sqlitePath = rawUrl?.startsWith('sqlite:') ? rawUrl.slice('sqlite:'.length) : '///store.db'
   let file
   if (sqlitePath.startsWith('////')) file = path.resolve(`/${sqlitePath.slice(4)}`)
   else if (sqlitePath.startsWith('///')) file = path.resolve(root, sqlitePath.slice(3) || 'store.db')
   else file = path.resolve(root, sqlitePath.replace(/^\/\//, '') || 'store.db')
   sequelize = new Sequelize({ dialect: 'sqlite', storage: file, logging: false })
 } else {
-  const url = rawUrl.replace('postgresql+psycopg://', 'postgres://').replace('postgresql+psycopg2://', 'postgres://')
   const production = (process.env.APP_ENV || '').toLowerCase() === 'production'
-  sequelize = new Sequelize(url, {
-    dialect: 'postgres', logging: false,
+  const connection = rawUrl
+    ? rawUrl.replace('postgresql+psycopg://', 'postgres://').replace('postgresql+psycopg2://', 'postgres://')
+    : {
+      dialect: 'postgres',
+      host: process.env.DB_HOST || 'localhost',
+      port: Number(process.env.DB_PORT || 5432),
+      database: process.env.DB_NAME,
+      username: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+    }
+  const options = {
+    logging: false,
     pool: { max: Number(process.env.DB_POOL_MAX || 10), min: 0, acquire: 30000, idle: 10000 },
     dialectOptions: production && process.env.DATABASE_SSL === 'true' ? { ssl: { require: true, rejectUnauthorized: process.env.DATABASE_SSL_VERIFY !== 'false' } } : {},
-  })
+  }
+  sequelize = rawUrl ? new Sequelize(connection, options) : new Sequelize({ ...connection, ...options })
 }
 
 const common = { timestamps: false, freezeTableName: true, underscored: true }

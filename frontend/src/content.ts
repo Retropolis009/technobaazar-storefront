@@ -38,8 +38,6 @@ export interface LandingContent {
   header_about_text: string
   footer_brand_text: string
   footer_tagline: string
-  footer_admin_text: string
-  footer_home_text: string
   seo_site_title: string
   seo_site_description: string
   seo_site_keywords: string
@@ -88,8 +86,6 @@ export const DEFAULT_LANDING_CONTENT: LandingContent = {
   header_about_text: 'Why TechnoBaazar',
   footer_brand_text: 'TECHNOBAAZAR',
   footer_tagline: 'Good gear for whatever you\u2019re building.',
-  footer_admin_text: 'Admin',
-  footer_home_text: 'Back to home',
   seo_site_title: 'Computer Parts & Laptops Online in Pakistan | TechnoBaazar',
   seo_site_description: 'Shop PC components, laptops, monitors, and accessories at TechnoBaazar. Compare specs, prices, and availability, with delivery across Pakistan.',
   seo_site_keywords: 'computer parts Pakistan, laptops online Pakistan, computer accessories, processors, graphics cards, monitors, TechnoBaazar',
